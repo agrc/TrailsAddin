@@ -1,43 +1,29 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
-<ArcGIS defaultAssembly="TrailsAddin.dll"
-        defaultNamespace="TrailsAddin"
-        xmlns="http://schemas.esri.com/DADF/Registry"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
-
+﻿<ArcGIS defaultAssembly="TrailsAddin.dll" defaultNamespace="TrailsAddin" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
   <AddInInfo id="{302c3d3b-3132-4d2c-923d-4a325e801d8c}" version="1.0" desktopVersion="2.0.8933">
-    <Name>TrailsAddin</Name>   
-    <Description>TrailsAddin description</Description>
+    <Name>Trails</Name>
+    <Description>Tools for working with SGID Trails data</Description>
     <Image>Images\AddinDesktop32.png</Image>
-    <Author>agrc-arcgis</Author>
-    <Company>Acme</Company>
+    <Author>Scott Davis</Author>
+    <Company>AGRC</Company>
     <Date>11/21/2017 1:24:39 PM, 2017</Date>
-    <Subject>Framework</Subject>
+    <Subject>Editing</Subject>
     <!-- Note subject can be one or more of these topics:
                     Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->
   </AddInInfo>
-
   <modules>
-    <insertModule id="TrailsAddin_Module" className="Module1" autoLoad="false" caption="Module1">
-      <!-- uncomment to have the control hosted on a separate tab-->
-      <tabs>
-        <!--<tab id="TrailsAddin_Tab1" caption="New Tab">
-          <group refID="TrailsAddin_Group1"/>
-        </tab>-->
-      </tabs>
-              
+    <insertModule id="TrailsAddin_Module" className="TrailsModule" autoLoad="false" caption="Trails Tools">
       <groups>
-        <!-- comment this out if you have no controls on the Addin tab to avoid
-              an empty group-->
-        <group id="TrailsAddin_Group1" caption="Group 1" appearsOnAddInTab="true">
-          <!-- host controls within groups -->
+        <group id="TrailsAddin_Group1" caption="Trails Tools" appearsOnAddInTab="true">
+          <buttonPalette refID="esri_mapping_selectToolPalette"/>
+          <editBox refID="RouteName_EditBox" />
+          <editBox refID="NumSegments_EditBox" />
+          <button refID="esri_editing_SaveEditsBtn" size="large"/>
         </group>
       </groups>
-      
       <controls>
-        <!-- add your controls here -->
-      </controls> 
-      
+        <editBox id="RouteName_EditBox" caption="Name" className="RouteNameEditBox" dataType="string" sizeString="A Really Long Route Name" />
+        <editBox id="NumSegments_EditBox" caption="Selected Segments" className="NumSegmentsEditBox" dataType="int64" sizeString="10" />
+      </controls>
     </insertModule>
   </modules>
 </ArcGIS>

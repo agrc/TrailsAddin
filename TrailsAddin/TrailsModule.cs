@@ -6,21 +6,23 @@ using System.Windows.Input;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using System.Threading.Tasks;
+using ArcGIS.Desktop.Mapping;
 
 namespace TrailsAddin
 {
-    internal class Module1 : Module
+    internal class TrailsModule : Module
     {
-        private static Module1 _this = null;
+        private static TrailsModule _this = null;
+        public string NewRouteName;
 
         /// <summary>
         /// Retrieve the singleton instance to this module here
         /// </summary>
-        public static Module1 Current
+        public static TrailsModule Current
         {
             get
             {
-                return _this ?? (_this = (Module1)FrameworkApplication.FindModule("TrailsAddin_Module"));
+                return _this ?? (_this = (TrailsModule)FrameworkApplication.FindModule("TrailsAddin_Module"));
             }
         }
 
