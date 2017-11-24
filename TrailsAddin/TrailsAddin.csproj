@@ -95,7 +95,7 @@
   <ItemGroup>
     <Compile Include="NumSegmentsEditBox.cs" />
     <Compile Include="RouteNameEditBox.cs" />
-    <Compile Include="TrailsModule.cs" />
+    <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

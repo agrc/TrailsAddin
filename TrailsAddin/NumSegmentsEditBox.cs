@@ -14,10 +14,8 @@ namespace TrailsAddin
         {
             MapSelectionChangedEvent.Subscribe((MapSelectionChangedEventArgs args) =>
             {
-                var sgidTrailsLayer = MapView.Active.Map.GetLayersAsFlattenedList().First(l => l.Name == "SGID10.RECREATION.Trails") as FeatureLayer;
-                Text = sgidTrailsLayer.SelectionCount.ToString();
+                Text = Main.SGIDTrailsLayer.SelectionCount.ToString();
             });
         }
-
     }
 }

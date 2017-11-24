@@ -15,31 +15,19 @@ namespace TrailsAddin
 {
     internal class RouteNameEditBox : ArcGIS.Desktop.Framework.Contracts.EditBox
     {
-        protected override void OnTextChange(string text)
-        {
-            // force to title case
-            TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
-            text = textInfo.ToTitleCase(text);
-            TrailsAddin.TrailsModule.Current.NewRouteName = text;
-
-            Text = text;
-        }
-        
         protected override async void OnEnter()
         {
             var map = MapView.Active.Map;
-            var segmentsLayer = map.GetLayersAsFlattenedList().First(l => l.Name == "TrailSegments") as FeatureLayer;
-            var sgidTrailsLayer = map.GetLayersAsFlattenedList().First(l => l.Name == "SGID10.RECREATION.Trails") as FeatureLayer;
-            var routesStandaloneTable = map.StandaloneTables.First(l => l.Name == "Routes") as StandaloneTable;
-            string routeName = TrailsAddin.TrailsModule.Current.NewRouteName;
+            TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
+            string routeName = textInfo.ToTitleCase(Text);
 
             await QueuedTask.Run(() =>
             {
-                using (Table routesTable = routesStandaloneTable.GetTable())
-                using (FeatureClass segmentsFeatureClass = segmentsLayer.GetFeatureClass())
+                using (Table routesTable = Main.RoutesStandaloneTable.GetTable())
+                using (FeatureClass segmentsFeatureClass = Main.SegmentsLayer.GetFeatureClass())
                 using (RowBuffer routeBuf = routesTable.CreateRowBuffer())
-                using (RowCursor selectionCursor = sgidTrailsLayer.GetSelection().Search(null, false))
-                using (Geodatabase geodatabase = segmentsLayer.GetTable().GetDatastore() as Geodatabase)
+                using (RowCursor selectionCursor = Main.SGIDTrailsLayer.GetSelection().Search(null, false))
+                using (Geodatabase geodatabase = Main.SegmentsLayer.GetTable().GetDatastore() as Geodatabase)
                 using (AttributedRelationshipClass relationshipClass = geodatabase.OpenDataset<AttributedRelationshipClass>("RouteToTrailSegments"))
                 {
                     // TODO: QA/QC route name unique, ordered segments are connected
@@ -55,7 +43,7 @@ namespace TrailsAddin
                         int order = 1;
                         while (selectionCursor.MoveNext())
                         {
-                            RowBuffer segRowBuf = segmentsLayer.GetFeatureClass().CreateRowBuffer();
+                            RowBuffer segRowBuf = Main.SegmentsLayer.GetFeatureClass().CreateRowBuffer();
 
                             foreach (Field field in selectionCursor.Current.GetFields())
                             {
@@ -91,7 +79,7 @@ namespace TrailsAddin
                         FrameworkApplication.AddNotification(notification);
 
                         Text = "";
-                        sgidTrailsLayer.ClearSelection();
+                        Main.SGIDTrailsLayer.ClearSelection();
                     } else
                     {
                         MessageBox.Show(operation.ErrorMessage);
