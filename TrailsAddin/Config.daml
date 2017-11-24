@@ -17,12 +17,15 @@
           <buttonPalette refID="esri_mapping_selectToolPalette"/>
           <editBox refID="RouteName_EditBox" />
           <editBox refID="NumSegments_EditBox" />
-          <button refID="esri_editing_SaveEditsBtn" size="large"/>
+          <editBox refID="NumTrailheads_EditBox"/>
+          <button refID="esri_editing_SaveEditsBtn"/>
+          <button refID="esri_editing_DiscardEditsBtn"/>
         </group>
       </groups>
       <controls>
         <editBox id="RouteName_EditBox" caption="Name" className="RouteNameEditBox" dataType="string" sizeString="A Really Long Route Name" />
         <editBox id="NumSegments_EditBox" caption="Selected Segments" className="NumSegmentsEditBox" dataType="int64" sizeString="10" />
+        <editBox id="NumTrailheads_EditBox" caption="Selected Trailhead(s)" className="NumTrailheadsEditBox" dataType="int64" sizeString="10" />
       </controls>
     </insertModule>
   </modules>

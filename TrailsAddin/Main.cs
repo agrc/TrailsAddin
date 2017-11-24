@@ -21,6 +21,7 @@ namespace TrailsAddin
         public static FeatureLayer SGIDTrailheadsLayer;
         public static FeatureLayer SGIDTrailsLayer;
         public static FeatureLayer SegmentsLayer;
+        public static FeatureLayer TrailheadsLayer;
         public static StandaloneTable RoutesStandaloneTable;
 
         /// <summary>
@@ -40,6 +41,7 @@ namespace TrailsAddin
             SGIDTrailheadsLayer = GetLayer("SGID10.RECREATION.Trailheads");
             SGIDTrailsLayer = GetLayer("SGID10.RECREATION.Trails");
             SegmentsLayer = GetLayer("TrailSegments");
+            TrailheadsLayer = GetLayer("Trailheads");
             RoutesStandaloneTable = MapView.Active.Map.StandaloneTables.First(l => l.Name == "Routes") as StandaloneTable;
         }
 
@@ -54,14 +56,23 @@ namespace TrailsAddin
             TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
             string routeName = textInfo.ToTitleCase(name);
 
+            if (SGIDTrailheadsLayer.SelectionCount > 1)
+            {
+                MessageBox.Show("A route may have only one trail head!", "New Route Aborted");
+                return;
+            }
+
             await QueuedTask.Run(() =>
             {
                 using (Table routesTable = RoutesStandaloneTable.GetTable())
                 using (FeatureClass segmentsFeatureClass = SegmentsLayer.GetFeatureClass())
+                using (FeatureClass trailheadsFeatureClass = TrailheadsLayer.GetFeatureClass())
                 using (RowBuffer routeBuf = routesTable.CreateRowBuffer())
-                using (RowCursor selectionCursor = SGIDTrailsLayer.GetSelection().Search(null, false))
+                using (RowCursor trailsSelectionCursor = SGIDTrailsLayer.GetSelection().Search(null, false))
+                using (RowCursor trailheadsSelectionCursor = SGIDTrailheadsLayer.GetSelection().Search(null, false))
                 using (Geodatabase geodatabase = SegmentsLayer.GetTable().GetDatastore() as Geodatabase)
-                using (AttributedRelationshipClass relationshipClass = geodatabase.OpenDataset<AttributedRelationshipClass>("RouteToTrailSegments"))
+                using (AttributedRelationshipClass segmentsRelationshipClass = geodatabase.OpenDataset<AttributedRelationshipClass>("RouteToTrailSegments"))
+                using (RelationshipClass trailheadsRelationshipClass = geodatabase.OpenDataset<RelationshipClass>("TrailheadToRoute"))
                 {
                     // TODO: QA/QC route name unique, ordered segments are connected
 
@@ -73,27 +84,31 @@ namespace TrailsAddin
                         routeBuf["RouteName"] = routeName;
                         Row routeRow = routesTable.CreateRow(routeBuf);
 
-                        int order = 1;
-                        while (selectionCursor.MoveNext())
+                        if (SGIDTrailheadsLayer.SelectionCount == 1)
                         {
-                            RowBuffer segRowBuf = SegmentsLayer.GetFeatureClass().CreateRowBuffer();
-
-                            foreach (Field field in selectionCursor.Current.GetFields())
+                            trailheadsSelectionCursor.MoveNext();
+                            RowBuffer trailheadRowBuf = CopyRowValues(trailheadsSelectionCursor.Current, trailheadsFeatureClass);
+                            trailheadRowBuf["USNG_TH"] = Guid.NewGuid().ToString().Substring(0, 13);
+                            routeRow["THID_FK"] = trailheadRowBuf["USNG_TH"];
+                            using (Row trailheadRow = trailheadsFeatureClass.CreateRow(trailheadRowBuf))
                             {
-                                if (field.IsEditable)
-                                {
-                                    segRowBuf[field.Name] = selectionCursor.Current[field.Name];
-                                }
+                                trailheadsRelationshipClass.CreateRelationship(routeRow, trailheadRow);
                             }
+                        }
+
+                        int order = 1;
+                        while (trailsSelectionCursor.MoveNext())
+                        {
+                            RowBuffer segRowBuf = CopyRowValues(trailsSelectionCursor.Current, segmentsFeatureClass);
 
                             segRowBuf["USNG_SEG"] = Guid.NewGuid().ToString().Substring(0, 13);
 
                             using (Row segRow = segmentsFeatureClass.CreateRow(segRowBuf))
                             {
                                 context.Invalidate(segRow);
-                                RowBuffer relationshipRowBuf = relationshipClass.CreateRowBuffer();
+                                RowBuffer relationshipRowBuf = segmentsRelationshipClass.CreateRowBuffer();
                                 relationshipRowBuf["RoutePart"] = order;
-                                relationshipClass.CreateRelationship(routeRow, segRow, relationshipRowBuf);
+                                segmentsRelationshipClass.CreateRelationship(routeRow, segRow, relationshipRowBuf);
                             }
 
                             order++;
@@ -101,7 +116,7 @@ namespace TrailsAddin
 
                         context.Invalidate(routeRow);
                         routeRow.Dispose();
-                    }, routesTable, segmentsFeatureClass, relationshipClass);
+                    }, routesTable, segmentsFeatureClass, segmentsRelationshipClass);
 
                     operation.Execute();
                     if (operation.IsSucceeded)
@@ -112,12 +127,28 @@ namespace TrailsAddin
                         FrameworkApplication.AddNotification(notification);
 
                         SGIDTrailsLayer.ClearSelection();
+                        SGIDTrailheadsLayer.ClearSelection();
                     } else
                     {
                         MessageBox.Show(operation.ErrorMessage);
                     }
                 }
             });
+        }
+
+        private static RowBuffer CopyRowValues(Row originRow, FeatureClass destinationFeatureClass)
+        {
+            RowBuffer segRowBuf = destinationFeatureClass.CreateRowBuffer();
+
+            foreach (Field field in originRow.GetFields())
+            {
+                if (field.IsEditable)
+                {
+                    segRowBuf[field.Name] = originRow[field.Name];
+                }
+            }
+
+            return segRowBuf;
         }
 
         #region Overrides

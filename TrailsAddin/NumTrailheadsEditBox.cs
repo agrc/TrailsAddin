@@ -2,13 +2,13 @@
 
 namespace TrailsAddin
 {
-    internal class NumSegmentsEditBox : ArcGIS.Desktop.Framework.Contracts.EditBox
+    internal class NumTrailheadsEditBox : ArcGIS.Desktop.Framework.Contracts.EditBox
     {
-        public NumSegmentsEditBox()
+        public NumTrailheadsEditBox()
         {
             MapSelectionChangedEvent.Subscribe((MapSelectionChangedEventArgs args) =>
             {
-                Text = Main.SGIDTrailsLayer.SelectionCount.ToString();
+                Text = Main.SGIDTrailheadsLayer.SelectionCount.ToString();
             });
         }
     }
