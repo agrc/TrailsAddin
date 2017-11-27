@@ -12,8 +12,13 @@
   </AddInInfo>
   <modules>
     <insertModule id="TrailsAddin_Module" className="TrailsModule" autoLoad="false" caption="Trails Tools">
+      <tabs>
+        <tab id="Trails_Tab1" caption="Trails">
+          <group refID="TrailsAddin_Group1"/>
+        </tab>
+      </tabs>
       <groups>
-        <group id="TrailsAddin_Group1" caption="Trails Tools" appearsOnAddInTab="true">
+        <group id="TrailsAddin_Group1" caption="Trails Tools">
           <buttonPalette refID="esri_mapping_selectToolPalette"/>
           <editBox refID="RouteName_EditBox" />
           <editBox refID="NumSegments_EditBox" />
