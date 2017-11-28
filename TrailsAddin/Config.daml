@@ -11,26 +11,48 @@
                     Content, Framework, Editing, Geodatabase, Geometry, Geoprocessing, Layouts, Map Authoring, Map Exploration -->
   </AddInInfo>
   <modules>
-    <insertModule id="TrailsAddin_Module" className="TrailsModule" autoLoad="false" caption="Trails Tools">
+    <insertModule id="TrailsAddin_Module" className="Main" autoLoad="false" caption="Trails Tools">
       <tabs>
         <tab id="Trails_Tab1" caption="Trails">
-          <group refID="TrailsAddin_Group1"/>
+          <group refID="TrailsAddin_ToolsGroup" />
+          <group refID="TrailsAddin_PartsGroup" />
+          <group refID="TrailsAddin_EditsGroup" />
         </tab>
       </tabs>
       <groups>
-        <group id="TrailsAddin_Group1" caption="Trails Tools">
-          <buttonPalette refID="esri_mapping_selectToolPalette"/>
+        <group id="TrailsAddin_ToolsGroup" caption="Tools">
+          <buttonPalette refID="esri_mapping_selectToolPalette" />
           <editBox refID="RouteName_EditBox" />
           <editBox refID="NumSegments_EditBox" />
-          <editBox refID="NumTrailheads_EditBox"/>
-          <button refID="esri_editing_SaveEditsBtn"/>
-          <button refID="esri_editing_DiscardEditsBtn"/>
+          <editBox refID="NumTrailheads_EditBox" />
+        </group>
+        <group id="TrailsAddin_PartsGroup" caption="Parts">
+          <editBox refID="NumParts_EditBox"/>    
+          <button refID="AddPart_Button"/>
+          <button refID="ClearParts_Button"/>
+        </group>
+        <group id="TrailsAddin_EditsGroup" caption="Edits">
+          <button refID="esri_editing_SaveEditsBtn" />
+          <button refID="esri_editing_DiscardEditsBtn" />
         </group>
       </groups>
       <controls>
         <editBox id="RouteName_EditBox" caption="Name" className="RouteNameEditBox" dataType="string" sizeString="A Really Long Route Name" />
         <editBox id="NumSegments_EditBox" caption="Selected Segments" className="NumSegmentsEditBox" dataType="int64" sizeString="10" />
         <editBox id="NumTrailheads_EditBox" caption="Selected Trailhead(s)" className="NumTrailheadsEditBox" dataType="int64" sizeString="10" />
+        <editBox id="NumParts_EditBox" caption="Parts" className="NumPartsEditBox" dataType="int64" sizeString="1"/>
+        <button id="AddPart_Button" caption="Add Part" className="TrailsAddin_Module:OnAddPartButtonClick"
+          smallImage="Images\GenericButtonBlue16.png" largeImage="Images\GenericButtonBlue32.png">
+          <tooltip heading="Add Route Part">Use this to add the selected SGID segments as a part to a new route.
+            <disabledText>You must have at least one SGID segment selected.</disabledText>
+          </tooltip>
+        </button>
+        <button id="ClearParts_Button" caption="Clear Parts" className="TrailsAddin_Module:OnClearPartsButtonClick"
+          smallImage="Images\GenericButtonBlue16.png" largeImage="Images\GenericButtonBlue32.png">
+          <tooltip heading="Clear Parts">Use this button to clear any existing parts.
+            <disabledText>You must have at least one part generated.</disabledText>
+          </tooltip>
+        </button>
       </controls>
     </insertModule>
   </modules>

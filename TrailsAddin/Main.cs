@@ -1,17 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Windows.Input;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
-using System.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
 using System.Globalization;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Core.Data;
 using ArcGIS.Desktop.Editing;
 using ArcGIS.Desktop.Framework.Dialogs;
+using ArcGIS.Core.Geometry;
+using System.Collections.Generic;
+using static ArcGIS.Desktop.Editing.EditOperation;
 
 namespace TrailsAddin
 {
@@ -23,6 +22,8 @@ namespace TrailsAddin
         public static FeatureLayer SegmentsLayer;
         public static FeatureLayer TrailheadsLayer;
         public static StandaloneTable RoutesStandaloneTable;
+        public static List<Row[]> Parts = new List<Row[]>();
+        public static event EventHandler<OnAddPartArgs> RaiseOnAddPart;
 
         /// <summary>
         /// Retrieve the singleton instance to this module here
@@ -77,7 +78,7 @@ namespace TrailsAddin
                     // TODO: QA/QC route name unique, ordered segments are connected
 
                     var operation = new EditOperation();
-                    operation.Name = "Create new trails route";
+                    operation.Name = "Create new trails route: " + routeName;
 
                     operation.Callback(context =>
                     {
@@ -96,22 +97,24 @@ namespace TrailsAddin
                             }
                         }
 
-                        int order = 1;
+
+                        int partNumber = 1;
+                        if (Parts.Count > 0)
+                        {
+                            Parts.ForEach(part =>
+                            {
+                                foreach (Row row in part)
+                                {
+                                    // copy segments and populate routePart as partNumber
+                                    CopySegment(row, partNumber, segmentsFeatureClass, segmentsRelationshipClass, context, routeRow);
+                                }
+                                partNumber++;
+                            });
+                        }
+
                         while (trailsSelectionCursor.MoveNext())
                         {
-                            RowBuffer segRowBuf = CopyRowValues(trailsSelectionCursor.Current, segmentsFeatureClass);
-
-                            segRowBuf["USNG_SEG"] = Guid.NewGuid().ToString().Substring(0, 13);
-
-                            using (Row segRow = segmentsFeatureClass.CreateRow(segRowBuf))
-                            {
-                                context.Invalidate(segRow);
-                                RowBuffer relationshipRowBuf = segmentsRelationshipClass.CreateRowBuffer();
-                                relationshipRowBuf["RoutePart"] = order;
-                                segmentsRelationshipClass.CreateRelationship(routeRow, segRow, relationshipRowBuf);
-                            }
-
-                            order++;
+                            CopySegment(trailsSelectionCursor.Current, partNumber, segmentsFeatureClass, segmentsRelationshipClass, context, routeRow);
                         }
 
                         context.Invalidate(routeRow);
@@ -121,6 +124,9 @@ namespace TrailsAddin
                     operation.Execute();
                     if (operation.IsSucceeded)
                     {
+                        Parts.Clear();
+                        RaiseOnAddPart(_this, new OnAddPartArgs(Parts.Count));
+
                         Notification notification = new Notification();
                         notification.Title = FrameworkApplication.Title;
                         notification.Message = string.Format("Route: \"{0}\" added successfully!", routeName);
@@ -134,6 +140,21 @@ namespace TrailsAddin
                     }
                 }
             });
+        }
+
+        private static void CopySegment (Row row, int partNum, FeatureClass segmentsFeatureClass, AttributedRelationshipClass segmentsRelationshipClass, IEditContext context, Row routeRow) {
+            RowBuffer segRowBuf = CopyRowValues(row, segmentsFeatureClass);
+
+            segRowBuf["USNG_SEG"] = Guid.NewGuid().ToString().Substring(0, 13);
+
+            using (Row segRow = segmentsFeatureClass.CreateRow(segRowBuf))
+            {
+                context.Invalidate(segRow);
+                RowBuffer relationshipRowBuf = segmentsRelationshipClass.CreateRowBuffer();
+                relationshipRowBuf["RoutePart"] = partNum;
+                segmentsRelationshipClass.CreateRelationship(routeRow, segRow, relationshipRowBuf);
+            }
+
         }
 
         private static RowBuffer CopyRowValues(Row originRow, FeatureClass destinationFeatureClass)
@@ -151,6 +172,49 @@ namespace TrailsAddin
             return segRowBuf;
         }
 
+        internal static bool CanOnAddPartButtonClick
+        {
+            get {
+                return SGIDTrailsLayer.SelectionCount > 0;
+            }
+        }
+
+        internal static async void OnAddPartButtonClick()
+        {
+            await QueuedTask.Run(() =>
+            {
+                Row[] rows = new Row[SGIDTrailsLayer.SelectionCount];
+                using (RowCursor trailsSelectionCursor = SGIDTrailsLayer.GetSelection().Search(null, false))
+                {
+                    int count = 0;
+                    while (trailsSelectionCursor.MoveNext())
+                    {
+                        rows[count] = trailsSelectionCursor.Current;
+                        count++;
+                    }
+                }
+                Parts.Add(rows);
+
+                RaiseOnAddPart(_this, new OnAddPartArgs(Parts.Count));
+
+                SGIDTrailsLayer.ClearSelection();
+            });
+        }
+
+        internal static bool CanOnClearPartsButtonClick
+        {
+            get
+            {
+                return Parts.Count > 0;
+            }
+        }
+
+        internal static void OnClearPartsButtonClick()
+        {
+            Parts.Clear();
+            RaiseOnAddPart(_this, new OnAddPartArgs(Parts.Count));
+        }
+
         #region Overrides
         /// <summary>
         /// Called by Framework when ArcGIS Pro is closing
@@ -164,6 +228,18 @@ namespace TrailsAddin
         }
 
         #endregion Overrides
+    }
 
+    public class OnAddPartArgs : EventArgs
+    {
+        public OnAddPartArgs(int num)
+        {
+            numParts = num;
+        }
+        private int numParts;
+        public int NumParts
+        {
+            get { return numParts; }
+        }
     }
 }

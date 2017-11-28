@@ -93,11 +93,24 @@
     </AddInContent>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="NumPartsEditBox.cs" />
     <Compile Include="NumTrailheadsEditBox.cs" />
     <Compile Include="NumSegmentsEditBox.cs" />
     <Compile Include="RouteNameEditBox.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="Images\GenericButtonBlue16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="Images\GenericButtonBlue32.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="DarkImages\GenericButtonBlue16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="DarkImages\GenericButtonBlue32.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--

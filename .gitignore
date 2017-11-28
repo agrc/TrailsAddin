@@ -244,3 +244,4 @@ ModelManifest.xml
 ProProject/ImportLog/
 ProProject/Index/
 ProProject/scratch.gdb/
+*.lock
