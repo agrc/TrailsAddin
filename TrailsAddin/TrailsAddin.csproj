@@ -93,12 +93,13 @@
     </AddInContent>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NumPartsEditBox.cs" />
     <Compile Include="NumTrailheadsEditBox.cs" />
     <Compile Include="NumSegmentsEditBox.cs" />
     <Compile Include="RouteNameEditBox.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ToggleCreateButton.cs" />
+    <Compile Include="ToggleSelectCheckbox.cs" />
   </ItemGroup>
   <ItemGroup>
     <AddInContent Include="Images\GenericButtonBlue16.png" />
@@ -111,6 +112,18 @@
   </ItemGroup>
   <ItemGroup>
     <AddInContent Include="DarkImages\GenericButtonBlue32.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="Images\GenericButtonRed16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="Images\GenericButtonRed32.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="DarkImages\GenericButtonRed16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AddInContent Include="DarkImages\GenericButtonRed32.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--

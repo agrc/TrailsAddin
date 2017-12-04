@@ -21,15 +21,13 @@
       </tabs>
       <groups>
         <group id="TrailsAddin_ToolsGroup" caption="Tools">
+          <button refID="esri_mapping_clearSelectionButton"/>
           <buttonPalette refID="esri_mapping_selectToolPalette" />
           <editBox refID="RouteName_EditBox" />
           <editBox refID="NumSegments_EditBox" />
           <editBox refID="NumTrailheads_EditBox" />
-        </group>
-        <group id="TrailsAddin_PartsGroup" caption="Parts">
-          <editBox refID="NumParts_EditBox"/>    
-          <button refID="AddPart_Button"/>
-          <button refID="ClearParts_Button"/>
+          <checkBox refID="ToggleSelect_CheckBox"/>
+          <button refID="Cancel_Button"/>
         </group>
         <group id="TrailsAddin_EditsGroup" caption="Edits">
           <button refID="esri_editing_SaveEditsBtn" />
@@ -38,20 +36,14 @@
       </groups>
       <controls>
         <editBox id="RouteName_EditBox" caption="Name" className="RouteNameEditBox" dataType="string" sizeString="A Really Long Route Name" />
-        <editBox id="NumSegments_EditBox" caption="Selected Segments" className="NumSegmentsEditBox" dataType="int64" sizeString="10" />
-        <editBox id="NumTrailheads_EditBox" caption="Selected Trailhead(s)" className="NumTrailheadsEditBox" dataType="int64" sizeString="10" />
-        <editBox id="NumParts_EditBox" caption="Parts" className="NumPartsEditBox" dataType="int64" sizeString="1"/>
-        <button id="AddPart_Button" caption="Add Part" className="TrailsAddin_Module:OnAddPartButtonClick"
-          smallImage="Images\GenericButtonBlue16.png" largeImage="Images\GenericButtonBlue32.png">
-          <tooltip heading="Add Route Part">Use this to add the selected SGID segments as a part to a new route.
-            <disabledText>You must have at least one SGID segment selected.</disabledText>
-          </tooltip>
-        </button>
-        <button id="ClearParts_Button" caption="Clear Parts" className="TrailsAddin_Module:OnClearPartsButtonClick"
-          smallImage="Images\GenericButtonBlue16.png" largeImage="Images\GenericButtonBlue32.png">
-          <tooltip heading="Clear Parts">Use this button to clear any existing parts.
-            <disabledText>You must have at least one part generated.</disabledText>
-          </tooltip>
+        <editBox id="NumSegments_EditBox" caption="Selected Segments" className="NumSegmentsEditBox" dataType="string" sizeString="10" />
+        <editBox id="NumTrailheads_EditBox" caption="Selected Trailhead(s)" className="NumTrailheadsEditBox" dataType="string" sizeString="10" />
+        <checkBox id="ToggleSelect_CheckBox" className="ToggleSelectCheckbox"
+          caption="Build route on select" loadOnClick="false">
+          <tooltip heading="Toggle">Toggle to create a route on select</tooltip>
+        </checkBox>
+        <button id="Cancel_Button" caption="Cancel New Route" className="TrailsAddin_Module:OnCancelButtonClick"  smallImage="Images\GenericButtonBlue16.png" largeImage="Images\GenericButtonBlue32.png">
+              
         </button>
       </controls>
     </insertModule>
