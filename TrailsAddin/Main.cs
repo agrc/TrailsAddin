@@ -149,7 +149,19 @@ namespace TrailsAddin
                         return;
                     }
 
-                    // TODO: QA/QC route name unique
+                    QueryFilter namesFilter = new QueryFilter()
+                    {
+                        WhereClause = $"Upper(RouteName) = '{routeName.ToUpper()}'"
+                    };
+                    using (RowCursor namesCursor = RoutesStandaloneTable.Search(namesFilter))
+                    {
+                        if (namesCursor.MoveNext())
+                        {
+                            MessageBox.Show($"There is already a route named: {routeName}!");
+                            return;
+                        }
+                    }
+
                     var operation = new EditOperation();
                     operation.Name = "Create new trails route: " + routeName;
 
