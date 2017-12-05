@@ -156,6 +156,7 @@ namespace TrailsAddin
                     operation.Callback(context =>
                     {
                         routeBuf["RouteName"] = routeName;
+                        routeBuf["RouteID"] = $"{{{Guid.NewGuid()}}}";
                         Row routeRow = routesTable.CreateRow(routeBuf);
 
                         if (BuildOnSelect)
