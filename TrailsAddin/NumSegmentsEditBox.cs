@@ -8,8 +8,8 @@ namespace TrailsAddin
         {
             MapSelectionChangedEvent.Subscribe((MapSelectionChangedEventArgs args) =>
             {
-                Text = Main.SGIDTrailsLayer.SelectionCount.ToString();
-            });
+                Text = Main.Current.SegmentsLayer.SelectionCount.ToString();
+            }));
         }
     }
 }

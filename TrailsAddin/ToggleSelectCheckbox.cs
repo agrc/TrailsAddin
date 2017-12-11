@@ -12,13 +12,13 @@ namespace TrailsAddin
 
         protected override void OnClick()
         {
-            Main.BuildOnSelect = (bool)IsChecked;
+            Main.Current.BuildOnSelect = (bool)IsChecked;
 
             QueuedTask.Run(() =>
             {
-                Main.SGIDTrailsLayer.ClearSelection();
-                Main.OnCancelButtonClick();
-            });
+                Main.Current.SegmentsLayer.ClearSelection();
+                Main.Current.OnCancelButtonClick();
+            }));
         }
     }
 }

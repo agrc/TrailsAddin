@@ -4,7 +4,7 @@
     {
         protected override void OnEnter()
         {
-            Main.AddNewRoute(Text);
+            Main.Current.AddNewRoute(Text);
 
             Text = "";
         }

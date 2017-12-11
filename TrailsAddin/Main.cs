@@ -19,16 +19,15 @@ namespace TrailsAddin
     internal class Main : Module
     {
         private static Main _this = null;
-        public static FeatureLayer SGIDTrailheadsLayer;
-        public static FeatureLayer SGIDTrailsLayer;
-        public static FeatureLayer SegmentsLayer;
-        public static FeatureLayer TrailheadsLayer;
-        public static StandaloneTable RoutesStandaloneTable;
-        private static FeatureLayer TempSegmentsLayer;
-        public static bool BuildOnSelect = false;
-        private static List<string> tempSegmentIDs = new List<string>();
-        private static int currentPart = 1;
-        private static FeatureLayer USNGLayer;
+        public FeatureLayer SegmentsLayer;
+        public FeatureLayer TrailheadsLayer;
+        public StandaloneTable RoutesStandaloneTable;
+        public StandaloneTable RouteToTrailSegmentsTable;
+        private FeatureLayer TempSegmentsLayer;
+        public bool BuildOnSelect = false;
+        private List<string> tempSegmentIDs = new List<string>();
+        private int currentPart = 1;
+        private FeatureLayer USNGLayer;
 
         /// <summary>
         /// Retrieve the singleton instance to this module here
@@ -41,7 +40,7 @@ namespace TrailsAddin
             }
         }
 
-        static Main()
+        Main()
         {
             // get layer references
             SGIDTrailheadsLayer = GetLayer("SGID10.RECREATION.Trailheads");
@@ -61,7 +60,7 @@ namespace TrailsAddin
             });
         }
 
-        private static void AddSelectedToTemp()
+        private void AddSelectedToTemp()
         {
             QueuedTask.Run(() =>
             {
@@ -113,12 +112,12 @@ namespace TrailsAddin
             });
         }
 
-        internal static FeatureLayer GetLayer(string name)
+        internal FeatureLayer GetLayer(string name)
         {
             return MapView.Active.Map.GetLayersAsFlattenedList().First(l => l.Name == name) as FeatureLayer;
         }
 
-        public static async void AddNewRoute(string name)
+        public async void AddNewRoute(string name)
         {
             var map = MapView.Active.Map;
             TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
@@ -237,7 +236,7 @@ namespace TrailsAddin
             });
         }
 
-        private static void CopySegment (Row row, Int16 partNum, FeatureClass segmentsFeatureClass, AttributedRelationshipClass segmentsRelationshipClass, IEditContext context, Row routeRow) {
+        private void CopySegment (Row row, Int16 partNum, FeatureClass segmentsFeatureClass, Table routeToSegsTable, IEditContext context, Row routeRow) {
             RowBuffer segRowBuf = CopyRowValues(row, segmentsFeatureClass);
 
             segRowBuf["USNG_SEG"] = GetUSNGID_Line(row);
@@ -251,7 +250,7 @@ namespace TrailsAddin
             }
         }
 
-        internal static RowBuffer CopyRowValues(Row originRow, FeatureClass destinationFeatureClass)
+        internal RowBuffer CopyRowValues(Row originRow, FeatureClass destinationFeatureClass)
         {
             RowBuffer segRowBuf = destinationFeatureClass.CreateRowBuffer();
 
@@ -266,7 +265,7 @@ namespace TrailsAddin
             return segRowBuf;
         }
 
-        private static string GetUSNGID_Point(MapPoint point)
+        private string GetUSNGID_Point(MapPoint point)
         {
             SpatialQueryFilter filter = new SpatialQueryFilter()
             {
@@ -306,7 +305,7 @@ namespace TrailsAddin
             return grid1mil + grid100k + strMeterX_NoDecimal + strMeterY_NoDecimal;
         }
 
-        private static string GetUSNGID_Line(Row segmentRow)
+        private string GetUSNGID_Line(Row segmentRow)
         {
             Polyline line = ((Feature)segmentRow).GetShape() as Polyline;
             MapPoint midpoint = GeometryEngine.Instance.MovePointAlongLine(line, 0.5, true, 0, SegmentExtension.NoExtension);
@@ -314,7 +313,7 @@ namespace TrailsAddin
             return GetUSNGID_Point(midpoint);
         }
 
-        internal static bool CanOnCancelButtonClick
+        internal bool CanOnCancelButtonClick
         {
             get
             {
@@ -322,13 +321,13 @@ namespace TrailsAddin
             }
         }
 
-        internal static void Reset()
+        internal void Reset()
         {
             tempSegmentIDs.Clear();
             currentPart = 1;
         }
 
-        internal static void OnCancelButtonClick()
+        internal void OnCancelButtonClick()
         {
             Reset();
 
