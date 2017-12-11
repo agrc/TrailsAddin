@@ -245,3 +245,6 @@ ProProject/ImportLog/
 ProProject/Index/
 ProProject/scratch.gdb/
 *.lock
+*.sde
+*.pyHistory
+.DS_Store
