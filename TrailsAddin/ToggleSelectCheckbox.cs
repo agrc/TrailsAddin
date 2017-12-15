@@ -18,7 +18,7 @@ namespace TrailsAddin
             {
                 Main.Current.SegmentsLayer.ClearSelection();
                 Main.Current.OnCancelButtonClick();
-            }));
+            });
         }
     }
 }

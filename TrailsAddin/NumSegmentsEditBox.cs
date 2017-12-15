@@ -9,7 +9,7 @@ namespace TrailsAddin
             MapSelectionChangedEvent.Subscribe((MapSelectionChangedEventArgs args) =>
             {
                 Text = Main.Current.SegmentsLayer.SelectionCount.ToString();
-            }));
+            });
         }
     }
 }

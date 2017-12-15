@@ -8,7 +8,7 @@ namespace TrailsAddin
         {
             MapSelectionChangedEvent.Subscribe((MapSelectionChangedEventArgs args) =>
             {
-                Text = Main.Current.TrailheadsLayer.SelectionCount.ToString();
+                Text = Main.Current.HeadsLayer.SelectionCount.ToString();
             });
         }
     }

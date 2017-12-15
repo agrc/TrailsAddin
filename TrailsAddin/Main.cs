@@ -20,7 +20,7 @@ namespace TrailsAddin
     {
         private static Main _this = null;
         public FeatureLayer SegmentsLayer;
-        public FeatureLayer TrailheadsLayer;
+        public FeatureLayer HeadsLayer;
         public StandaloneTable RoutesStandaloneTable;
         public StandaloneTable RouteToTrailSegmentsTable;
         private FeatureLayer TempSegmentsLayer;
@@ -28,6 +28,17 @@ namespace TrailsAddin
         private List<string> tempSegmentIDs = new List<string>();
         private int currentPart = 1;
         private FeatureLayer USNGLayer;
+
+        // field names
+        private string RouteName = "RouteName";
+        private string THID_FK = "THID_FK";
+        private string RouteID = "RouteID";
+        private string OutAndBack = "OutAndBack";
+
+        private string USNG_SEG = "USNG_SEG";
+        private string RoutePart = "RoutePart";
+
+        private string USNG_TH = "USNG_TH";
 
         /// <summary>
         /// Retrieve the singleton instance to this module here
@@ -42,18 +53,23 @@ namespace TrailsAddin
 
         Main()
         {
-            // get layer references
-            SGIDTrailheadsLayer = GetLayer("SGID10.RECREATION.Trailheads");
-            SGIDTrailsLayer = GetLayer("SGID10.RECREATION.Trails");
-            SegmentsLayer = GetLayer("TrailSegments");
-            TrailheadsLayer = GetLayer("Trailheads");
-            TempSegmentsLayer = GetLayer("Temp Segments");
-            USNGLayer = GetLayer("SGID10.INDICES.NationalGrid");
-            RoutesStandaloneTable = MapView.Active.Map.StandaloneTables.First(l => l.Name == "Routes") as StandaloneTable;
+            try
+            {
+                // get layer references
+                SegmentsLayer = GetLayer("TrailSegments");
+                HeadsLayer = GetLayer("Trailheads");
+                TempSegmentsLayer = GetLayer("Temporary Segments");
+                USNGLayer = GetLayer("SGID10.INDICES.NationalGrid");
+                RoutesStandaloneTable = GetStandAloneTable("Routes");
+                RouteToTrailSegmentsTable = GetStandAloneTable("RouteToTrailSegments");
+            } catch
+            {
+                MessageBox.Show("Missing layer!");
+            }
 
             MapSelectionChangedEvent.Subscribe((MapSelectionChangedEventArgs args) =>
             {
-                if (BuildOnSelect && args.Selection.Keys.Contains(SGIDTrailsLayer as MapMember))
+                if (BuildOnSelect && args.Selection.Keys.Contains(SegmentsLayer as MapMember))
                 {
                     AddSelectedToTemp();
                 }
@@ -65,17 +81,17 @@ namespace TrailsAddin
             QueuedTask.Run(() =>
             {
                 using (FeatureClass tempSegsFC = TempSegmentsLayer.GetFeatureClass())
-                using (RowCursor sgidSegs = SGIDTrailsLayer.GetSelection().Search(null, false))
+                using (RowCursor segmentsCursor = SegmentsLayer.GetSelection().Search((QueryFilter)null, false))
                 {
                     EditOperation operation = new EditOperation();
                     operation.Name = "add selected to temp segments";
                     bool newPartCreated = false;
                     operation.Callback(context =>
                     {
-                        while (sgidSegs.MoveNext())
+                        while (segmentsCursor.MoveNext())
                         {
-                            string id = GetUSNGID_Line(sgidSegs.Current);
-                            RowBuffer tempRowBuf = CopyRowValues(sgidSegs.Current, tempSegsFC);
+                            string id = GetUSNGID_Line(segmentsCursor.Current);
+                            RowBuffer tempRowBuf = CopyRowValues(segmentsCursor.Current, tempSegsFC);
                             tempRowBuf["USNG_SEG"] = id;
                             if (tempSegmentIDs.Contains(id))
                             {
@@ -106,7 +122,7 @@ namespace TrailsAddin
                     bool success = operation.Execute();
                     if (success)
                     {
-                        SGIDTrailsLayer.ClearSelection();
+                        SegmentsLayer.ClearSelection();
                     }
                 }
             });
@@ -117,40 +133,39 @@ namespace TrailsAddin
             return MapView.Active.Map.GetLayersAsFlattenedList().First(l => l.Name == name) as FeatureLayer;
         }
 
+        internal StandaloneTable GetStandAloneTable(string name)
+        {
+            return MapView.Active.Map.StandaloneTables.First(l => l.Name == name) as StandaloneTable;
+        }
+
         public async void AddNewRoute(string name)
         {
             var map = MapView.Active.Map;
             TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
             string routeName = textInfo.ToTitleCase(name);
 
-            if (SGIDTrailheadsLayer.SelectionCount > 1)
+            if (HeadsLayer.SelectionCount > 1)
             {
                 MessageBox.Show("A route may have only one trail head!", "New Route Aborted");
+                return;
+            }
+
+            if (!BuildOnSelect && SegmentsLayer.SelectionCount == 0)
+            {
+                MessageBox.Show("At least one segment must be selected!");
                 return;
             }
 
             await QueuedTask.Run(() =>
             {
                 using (Table routesTable = RoutesStandaloneTable.GetTable())
-                using (FeatureClass segmentsFeatureClass = SegmentsLayer.GetFeatureClass())
-                using (FeatureClass trailheadsFeatureClass = TrailheadsLayer.GetFeatureClass())
+                using (Table routeToSegmentsTable = RouteToTrailSegmentsTable.GetTable())
                 using (RowBuffer routeBuf = routesTable.CreateRowBuffer())
-                using (RowCursor trailsSelectionCursor = SGIDTrailsLayer.GetSelection().Search(null, false))
-                using (RowCursor trailheadsSelectionCursor = SGIDTrailheadsLayer.GetSelection().Search(null, false))
-                using (Geodatabase geodatabase = SegmentsLayer.GetTable().GetDatastore() as Geodatabase)
-                using (AttributedRelationshipClass segmentsRelationshipClass = geodatabase.OpenDataset<AttributedRelationshipClass>("RouteToTrailSegments"))
-                using (RelationshipClass trailheadsRelationshipClass = geodatabase.OpenDataset<RelationshipClass>("TrailheadToRoute"))
-                using (FeatureClass tempSegsFC = TempSegmentsLayer.GetFeatureClass())
+                using (FeatureClass tempSegsFeatureClass = TempSegmentsLayer.GetFeatureClass())
                 {
-                    if (!BuildOnSelect && SGIDTrailsLayer.SelectionCount == 0)
-                    {
-                        MessageBox.Show("At least one segment must be selected!");
-                        return;
-                    }
-
                     QueryFilter namesFilter = new QueryFilter()
                     {
-                        WhereClause = $"Upper(RouteName) = '{routeName.ToUpper()}'"
+                        WhereClause = $"Upper({RouteName}) = '{routeName.ToUpper()}'"
                     };
                     using (RowCursor namesCursor = RoutesStandaloneTable.Search(namesFilter))
                     {
@@ -164,59 +179,68 @@ namespace TrailsAddin
                     var operation = new EditOperation();
                     operation.Name = "Create new trails route: " + routeName;
 
+                    EnsureIDs(operation);
                     operation.Callback(context =>
                     {
-                        routeBuf["RouteName"] = routeName;
-                        routeBuf["RouteID"] = $"{{{Guid.NewGuid()}}}";
-                        Row routeRow = routesTable.CreateRow(routeBuf);
-
-                        if (BuildOnSelect)
+                        // create route row
+                        routeBuf[RouteName] = routeName;
+                        routeBuf[RouteID] = $"{{{Guid.NewGuid()}}}";
+                        routeBuf[OutAndBack] = "Yes";
+                        using (Row routeRow = routesTable.CreateRow(routeBuf))
+                        using (RowCursor headsCursor = HeadsLayer.GetSelection().Search(null, false))
+                        using (RowCursor segmentCursor = SegmentsLayer.GetSelection().Search((QueryFilter)null, false))
                         {
-                            // get segments from TempSegments layer
-                            bool atLeastOne = false;
-                            using (RowCursor tempSegsCursor = tempSegsFC.Search(null, false))
-                            {
-                                while (tempSegsCursor.MoveNext())
-                                {
-                                    atLeastOne = true;
-                                    Row row = tempSegsCursor.Current;
-                                    CopySegment(row, (short)row["RoutePart"], segmentsFeatureClass, segmentsRelationshipClass, context, routeRow);
-                                }
-                                Reset();
-                                tempSegsFC.DeleteRows(new QueryFilter());
-                                context.Invalidate(tempSegsFC);
-                            }
+                            //    if (BuildOnSelect)
+                            //    {
+                            //        // get segments from TempSegments layer
+                            //        bool atLeastOne = false;
+                            //        using (RowCursor tempSegsCursor = tempSegsFC.Search(null, false))
+                            //        {
+                            //            while (tempSegsCursor.MoveNext())
+                            //            {
+                            //                atLeastOne = true;
+                            //                Row row = tempSegsCursor.Current;
+                            //                CopySegment(row, (short)row["RoutePart"], segmentsFeatureClass, routeToSegmentsTable, context, routeRow);
+                            //            }
+                            //            Reset();
+                            //            tempSegsFC.DeleteRows(new QueryFilter());
+                            //            context.Invalidate(tempSegsFC);
+                            //        }
 
-                            if (!atLeastOne)
-                            {
-                                context.Abort("There must be at least one feature in TempSegments!");
-                            }
-                        }
-                        else
-                        {
+                            //        if (!atLeastOne)
+                            //        {
+                            //            context.Abort("There must be at least one feature in TempSegments!");
+                            //        }
+                            //    }
+                            //    else
+                            //    {
                             // get segments from selected features
-                            while (trailsSelectionCursor.MoveNext())
+                            while (segmentCursor.MoveNext())
                             {
-                                CopySegment(trailsSelectionCursor.Current, 1, segmentsFeatureClass, segmentsRelationshipClass, context, routeRow);
-                            }
-                        }
+                                var segRow = segmentCursor.Current;
 
-                        // trailhead
-                        if (SGIDTrailheadsLayer.SelectionCount == 1)
-                        {
-                            trailheadsSelectionCursor.MoveNext();
-                            RowBuffer trailheadRowBuf = CopyRowValues(trailheadsSelectionCursor.Current, trailheadsFeatureClass);
-                            trailheadRowBuf["USNG_TH"] = GetUSNGID_Point(((Feature)trailheadsSelectionCursor.Current).GetShape() as MapPoint);
-                            routeRow["THID_FK"] = trailheadRowBuf["USNG_TH"];
-                            using (Row trailheadRow = trailheadsFeatureClass.CreateRow(trailheadRowBuf))
+                                using (RowBuffer routeToSegBuf = routeToSegmentsTable.CreateRowBuffer())
+                                {
+                                    routeToSegBuf[RouteID] = routeRow[RouteID];
+                                    routeToSegBuf[USNG_SEG] = segRow[USNG_SEG];
+                                    routeToSegBuf[RoutePart] = 1;
+
+                                    var row = routeToSegmentsTable.CreateRow(routeToSegBuf);
+                                    context.Invalidate(row);
+                                }
+                            }
+                            //    }
+
+                            // trailhead
+                            if (HeadsLayer.SelectionCount == 1)
                             {
-                                trailheadsRelationshipClass.CreateRelationship(routeRow, trailheadRow);
+                                headsCursor.MoveNext();
+                                routeRow[THID_FK] = headsCursor.Current[USNG_TH];
                             }
-                        }
 
-                        context.Invalidate(routeRow);
-                        routeRow.Dispose();
-                    }, routesTable, segmentsFeatureClass, segmentsRelationshipClass, tempSegsFC);
+                            context.Invalidate(routeRow);
+                        }
+                    }, routesTable, routeToSegmentsTable, tempSegsFeatureClass);
 
                     operation.Execute();
                     if (operation.IsSucceeded)
@@ -226,9 +250,10 @@ namespace TrailsAddin
                         notification.Message = string.Format("Route: \"{0}\" added successfully!", routeName);
                         FrameworkApplication.AddNotification(notification);
 
-                        SGIDTrailsLayer.ClearSelection();
-                        SGIDTrailheadsLayer.ClearSelection();
-                    } else
+                        SegmentsLayer.ClearSelection();
+                        HeadsLayer.ClearSelection();
+                    }
+                    else
                     {
                         MessageBox.Show(operation.ErrorMessage);
                     }
@@ -236,17 +261,23 @@ namespace TrailsAddin
             });
         }
 
-        private void CopySegment (Row row, Int16 partNum, FeatureClass segmentsFeatureClass, Table routeToSegsTable, IEditContext context, Row routeRow) {
-            RowBuffer segRowBuf = CopyRowValues(row, segmentsFeatureClass);
+        private void EnsureIDs(EditOperation operation)
+        {
+            using (RowCursor segmentsCursor = SegmentsLayer.GetSelection().Search()) {
+                while (segmentsCursor.MoveNext())
+                {
+                    var row = segmentsCursor.Current;
+                    operation.Modify(SegmentsLayer, row.GetObjectID(), new Dictionary<string, object> { [USNG_SEG] = GetUSNGID_Line(row) });
+                }
+            }
 
-            segRowBuf["USNG_SEG"] = GetUSNGID_Line(row);
-
-            using (Row segRow = segmentsFeatureClass.CreateRow(segRowBuf))
+            using (RowCursor headsCursor = HeadsLayer.GetSelection().Search())
             {
-                context.Invalidate(segRow);
-                RowBuffer relationshipRowBuf = segmentsRelationshipClass.CreateRowBuffer();
-                relationshipRowBuf["RoutePart"] = partNum;
-                segmentsRelationshipClass.CreateRelationship(routeRow, segRow, relationshipRowBuf);
+                while (headsCursor.MoveNext())
+                {
+                    var row = headsCursor.Current;
+                    operation.Modify(HeadsLayer, row.GetObjectID(), new Dictionary<string, object> { [USNG_TH] = GetUSNGID_Point((MapPoint)row["Shape"]) });
+                }
             }
         }
 
@@ -254,7 +285,7 @@ namespace TrailsAddin
         {
             RowBuffer segRowBuf = destinationFeatureClass.CreateRowBuffer();
 
-            foreach (Field field in originRow.GetFields())
+            foreach (Field field in segRowBuf.GetFields())
             {
                 if (field.IsEditable && field.Name != "RoutePart")
                 {

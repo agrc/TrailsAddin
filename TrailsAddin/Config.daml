@@ -15,7 +15,6 @@
       <tabs>
         <tab id="Trails_Tab1" caption="Trails">
           <group refID="TrailsAddin_ToolsGroup" />
-          <group refID="TrailsAddin_PartsGroup" />
           <group refID="TrailsAddin_EditsGroup" />
         </tab>
       </tabs>
@@ -26,10 +25,11 @@
           <editBox refID="RouteName_EditBox" />
           <editBox refID="NumSegments_EditBox" />
           <editBox refID="NumTrailheads_EditBox" />
-          <checkBox refID="ToggleSelect_CheckBox"/>
-          <button refID="Cancel_Button"/>
+          <!--<checkBox refID="ToggleSelect_CheckBox"/>
+          <button refID="Cancel_Button"/>-->
         </group>
         <group id="TrailsAddin_EditsGroup" caption="Edits">
+          <button refID="esri_editing_ShowAttributes"/>
           <button refID="esri_editing_SaveEditsBtn" />
           <button refID="esri_editing_DiscardEditsBtn" />
         </group>
