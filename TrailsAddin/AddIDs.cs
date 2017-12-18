@@ -20,8 +20,18 @@ namespace TrailsAddin
                 if (!success)
                 {
                     MessageBox.Show(operation.ErrorMessage);
+                } else
+                {
+                    Main.Current.HeadsLayer.ClearSelection();
+                    Main.Current.SegmentsLayer.ClearSelection();
                 }
             });
+        }
+
+        protected override void OnUpdate()
+        {
+            var main = Main.Current;
+            Enabled = (main.SegmentsLayer.SelectionCount > 0 || main.HeadsLayer.SelectionCount > 0);
         }
     }
 }
