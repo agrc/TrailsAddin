@@ -12,7 +12,6 @@ using ArcGIS.Core.Geometry;
 using System.Collections.Generic;
 using static ArcGIS.Desktop.Editing.EditOperation;
 using ArcGIS.Desktop.Mapping.Events;
-using System.Diagnostics;
 
 namespace TrailsAddin
 {
@@ -249,7 +248,7 @@ namespace TrailsAddin
             }
         }
 
-        private void EnsureIDsForSelected(EditOperation operation)
+        internal void EnsureIDsForSelected(EditOperation operation)
         {
             using (RowCursor segmentsCursor = SegmentsLayer.GetSelection().Search()) {
                 while (segmentsCursor.MoveNext())

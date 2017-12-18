@@ -16,34 +16,40 @@
         <tab id="Trails_Tab1" caption="Trails">
           <group refID="TrailsAddin_ToolsGroup" />
           <group refID="TrailsAddin_EditsGroup" />
+          <group refID="TrailsAddin_IDsGroup" />
         </tab>
       </tabs>
       <groups>
-        <group id="TrailsAddin_ToolsGroup" caption="Tools">
-          <button refID="esri_mapping_clearSelectionButton"/>
+        <group id="TrailsAddin_ToolsGroup" caption="Route Building">
+          <button refID="esri_mapping_clearSelectionButton" />
           <buttonPalette refID="esri_mapping_selectToolPalette" />
           <editBox refID="RouteName_EditBox" />
           <editBox refID="NumSegments_EditBox" />
           <editBox refID="NumTrailheads_EditBox" />
-          <checkBox refID="ToggleSelect_CheckBox"/>
-          <button refID="Cancel_Button"/>
+          <checkBox refID="ToggleSelect_CheckBox" />
+          <button refID="Cancel_Button" />
         </group>
         <group id="TrailsAddin_EditsGroup" caption="Edits">
-          <button refID="esri_editing_ShowAttributes"/>
+          <button refID="esri_editing_ShowAttributes" />
           <button refID="esri_editing_SaveEditsBtn" />
           <button refID="esri_editing_DiscardEditsBtn" />
+        </group>
+        <group id="TrailsAddin_IDsGroup" caption="Tools">
+          <button refID="TrailsAddin_AddIDs" />
         </group>
       </groups>
       <controls>
         <editBox id="RouteName_EditBox" caption="Name" className="RouteNameEditBox" dataType="string" sizeString="A Really Long Route Name" />
         <editBox id="NumSegments_EditBox" caption="Selected Segments" className="NumSegmentsEditBox" dataType="string" sizeString="10" />
         <editBox id="NumTrailheads_EditBox" caption="Selected Trailhead(s)" className="NumTrailheadsEditBox" dataType="string" sizeString="10" />
-        <checkBox id="ToggleSelect_CheckBox" className="ToggleSelectCheckbox"
-          caption="Build route on select" loadOnClick="false">
+        <checkBox id="ToggleSelect_CheckBox" className="ToggleSelectCheckbox" caption="Build route on select" loadOnClick="false">
           <tooltip heading="Toggle">Toggle to create a route on select</tooltip>
         </checkBox>
-        <button id="Cancel_Button" caption="Cancel New Route" className="TrailsAddin_Module:OnCancelButtonClick"  smallImage="Images\GenericButtonBlue16.png" largeImage="Images\GenericButtonBlue32.png">
-              
+        <button id="Cancel_Button" caption="Cancel New Route" className="TrailsAddin_Module:OnCancelButtonClick" smallImage="Images\GenericButtonBlue16.png" largeImage="Images\GenericButtonBlue32.png">
+          <tooltip heading="Cancel Route">Cancel current route. Empties Temporary Segments layer.<disabledText /></tooltip>
+        </button>
+        <button id="TrailsAddin_AddIDs" caption="AddIDs" className="AddIDs" loadOnClick="true" smallImage="Images\GenericButtonBlue16.png" largeImage="Images\GenericButtonBlue32.png">
+          <tooltip heading="Tooltip Heading">Tooltip text<disabledText /></tooltip>
         </button>
       </controls>
     </insertModule>
