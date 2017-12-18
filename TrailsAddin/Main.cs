@@ -27,6 +27,7 @@ namespace TrailsAddin
         private List<string> tempSegmentIDs = new List<string>();
         private int currentPart = 1;
         private FeatureLayer USNGLayer;
+        public event EventHandler<OnNumPartsChangedArgs> OnNumPartsChanged;
 
         // field names
         private string RouteName = "RouteName";
@@ -241,7 +242,7 @@ namespace TrailsAddin
             {
                 routeToSegBuf[RouteID] = routeID;
                 routeToSegBuf[USNG_SEG] = segID;
-                routeToSegBuf[RoutePart] = 1;
+                routeToSegBuf[RoutePart] = part;
 
                 var row = routeToSegmentsTable.CreateRow(routeToSegBuf);
                 context.Invalidate(row);
@@ -269,6 +270,13 @@ namespace TrailsAddin
                     }
                 }
             }
+        }
+
+        internal void AddPart()
+        {
+            currentPart++;
+            tempSegmentIDs.Clear();
+            OnNumPartsChanged(this, new OnNumPartsChangedArgs(currentPart));
         }
 
         private string EnsureIDForSegment(Row row, EditOperation operation)
@@ -355,6 +363,7 @@ namespace TrailsAddin
         {
             tempSegmentIDs.Clear();
             currentPart = 1;
+            OnNumPartsChanged(this, new OnNumPartsChangedArgs(currentPart));
         }
 
         internal void OnCancelButtonClick()
@@ -395,5 +404,14 @@ namespace TrailsAddin
         }
 
         #endregion Overrides
+    }
+
+    class OnNumPartsChangedArgs : EventArgs
+    {
+        public int numParts { get; set; }
+        public OnNumPartsChangedArgs(int newNumber)
+        {
+            numParts = newNumber;
+        }
     }
 }

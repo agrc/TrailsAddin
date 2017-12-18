@@ -17,6 +17,7 @@
           <group refID="TrailsAddin_ToolsGroup" />
           <group refID="TrailsAddin_EditsGroup" />
           <group refID="TrailsAddin_IDsGroup" />
+          <group refID="TrailsAddin_PartsGroup"/>
         </tab>
       </tabs>
       <groups>
@@ -28,6 +29,10 @@
           <editBox refID="NumTrailheads_EditBox" />
           <checkBox refID="ToggleSelect_CheckBox" />
           <button refID="Cancel_Button" />
+        </group>
+        <group id="TrailsAddin_PartsGroup" caption="Parts">
+          <button refID="TrailsAddin_AddPart" />
+          <editBox refID="Parts_EditBox"/>
         </group>
         <group id="TrailsAddin_EditsGroup" caption="Edits">
           <button refID="esri_editing_ShowAttributes" />
@@ -51,6 +56,10 @@
         <button id="TrailsAddin_AddIDs" caption="AddIDs" className="AddIDs" loadOnClick="true" smallImage="Images\GenericButtonBlue16.png" largeImage="Images\GenericButtonBlue32.png">
           <tooltip heading="Tooltip Heading">Tooltip text<disabledText /></tooltip>
         </button>
+        <button id="TrailsAddin_AddPart" caption="AddPart" className="AddPart" loadOnClick="true" smallImage="Images\GenericButtonBlue16.png" largeImage="Images\GenericButtonBlue32.png">
+          <tooltip heading="Tooltip Heading">Tooltip text<disabledText /></tooltip>
+        </button>
+        <editBox id="Parts_EditBox" caption="Parts" className="NumPartsEditBox" dataType="string" sizeString="10" />
       </controls>
     </insertModule>
   </modules>

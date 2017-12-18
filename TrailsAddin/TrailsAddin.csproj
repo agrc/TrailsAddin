@@ -94,8 +94,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AddIDs.cs" />
+    <Compile Include="AddPart.cs" />
     <Compile Include="NumTrailheadsEditBox.cs" />
     <Compile Include="NumSegmentsEditBox.cs" />
+    <Compile Include="NumPartsEditBox.cs" />
     <Compile Include="RouteNameEditBox.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
