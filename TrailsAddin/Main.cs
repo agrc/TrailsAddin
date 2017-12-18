@@ -76,53 +76,34 @@ namespace TrailsAddin
             });
         }
 
-        private void AddSelectedToTemp()
+        private async void AddSelectedToTemp()
         {
-            QueuedTask.Run(() =>
+            await QueuedTask.Run(() =>
             {
-                using (FeatureClass tempSegsFC = TempSegmentsLayer.GetFeatureClass())
-                using (RowCursor segmentsCursor = SegmentsLayer.GetSelection().Search((QueryFilter)null, false))
+                using (RowCursor segmentsCursor = SegmentsLayer.GetSelection().Search(null))
                 {
                     EditOperation operation = new EditOperation();
                     operation.Name = "add selected to temp segments";
-                    bool newPartCreated = false;
-                    operation.Callback(context =>
+                    while (segmentsCursor.MoveNext())
                     {
-                        while (segmentsCursor.MoveNext())
+                        var id = EnsureIDForSegment(segmentsCursor.Current, operation);
+                        CopyRowValues(segmentsCursor.Current, currentPart, operation);
+
+                        if (tempSegmentIDs.Contains(id))
                         {
-                            string id = GetUSNGID_Line(segmentsCursor.Current);
-                            RowBuffer tempRowBuf = CopyRowValues(segmentsCursor.Current, tempSegsFC);
-                            tempRowBuf["USNG_SEG"] = id;
-                            if (tempSegmentIDs.Contains(id))
-                            {
-                                currentPart++;
-                                tempSegmentIDs.Clear();
-                                newPartCreated = true;
-                            }
-                            tempSegmentIDs.Add(id);
-                            tempRowBuf["RoutePart"] = currentPart;
-                            tempSegsFC.CreateRow(tempRowBuf);
-                            tempRowBuf.Dispose();
+                            MessageBox.Show($"This segment ({id}) has already been selected for the current part. Try creating a new part.");
                         }
-                        context.Invalidate(tempSegsFC);
-                    }, tempSegsFC);
-                    if (newPartCreated)
-                    {
-                        // NOT WORKING ref: https://community.esri.com/message/733381-re-examples-for-setonundone-setonredone-setoncomitted?commentID=733381#comment-733381
-                        operation.SetOnUndone(() =>
-                        {
-                            currentPart--;
-                        });
-                        operation.SetOnRedone(() =>
-                        {
-                            currentPart++;
-                        });
+                        tempSegmentIDs.Add(id);
                     }
 
                     bool success = operation.Execute();
                     if (success)
                     {
                         SegmentsLayer.ClearSelection();
+                        TempSegmentsLayer.ClearSelection();
+                    } else
+                    {
+                        MessageBox.Show(operation.ErrorMessage);
                     }
                 }
             });
@@ -130,6 +111,7 @@ namespace TrailsAddin
 
         internal FeatureLayer GetLayer(string name)
         {
+            // TODO: add try statement so that error message can show missing layer name
             return MapView.Active.Map.GetLayersAsFlattenedList().First(l => l.Name == name) as FeatureLayer;
         }
 
@@ -179,7 +161,7 @@ namespace TrailsAddin
                     var operation = new EditOperation();
                     operation.Name = "Create new trails route: " + routeName;
 
-                    EnsureIDs(operation);
+                    EnsureIDsForSelected(operation);
                     operation.Callback(context =>
                     {
                         // create route row
@@ -190,46 +172,39 @@ namespace TrailsAddin
                         using (RowCursor headsCursor = HeadsLayer.GetSelection().Search(null, false))
                         using (RowCursor segmentCursor = SegmentsLayer.GetSelection().Search((QueryFilter)null, false))
                         {
-                            //    if (BuildOnSelect)
-                            //    {
-                            //        // get segments from TempSegments layer
-                            //        bool atLeastOne = false;
-                            //        using (RowCursor tempSegsCursor = tempSegsFC.Search(null, false))
-                            //        {
-                            //            while (tempSegsCursor.MoveNext())
-                            //            {
-                            //                atLeastOne = true;
-                            //                Row row = tempSegsCursor.Current;
-                            //                CopySegment(row, (short)row["RoutePart"], segmentsFeatureClass, routeToSegmentsTable, context, routeRow);
-                            //            }
-                            //            Reset();
-                            //            tempSegsFC.DeleteRows(new QueryFilter());
-                            //            context.Invalidate(tempSegsFC);
-                            //        }
-
-                            //        if (!atLeastOne)
-                            //        {
-                            //            context.Abort("There must be at least one feature in TempSegments!");
-                            //        }
-                            //    }
-                            //    else
-                            //    {
-                            // get segments from selected features
-                            while (segmentCursor.MoveNext())
+                            if (BuildOnSelect)
                             {
-                                var segRow = segmentCursor.Current;
-
-                                using (RowBuffer routeToSegBuf = routeToSegmentsTable.CreateRowBuffer())
+                                // get segments from TempSegments layer
+                                bool atLeastOne = false;
+                                using (RowCursor tempSegsCursor = tempSegsFeatureClass.Search(null, false))
                                 {
-                                    routeToSegBuf[RouteID] = routeRow[RouteID];
-                                    routeToSegBuf[USNG_SEG] = segRow[USNG_SEG];
-                                    routeToSegBuf[RoutePart] = 1;
+                                    while (tempSegsCursor.MoveNext())
+                                    {
+                                        atLeastOne = true;
+                                        Row row = tempSegsCursor.Current;
 
-                                    var row = routeToSegmentsTable.CreateRow(routeToSegBuf);
-                                    context.Invalidate(row);
+                                        CreateRoutePart((string)row[USNG_SEG], (string)routeRow[RouteID], int.Parse(row[RoutePart].ToString()), context, routeToSegmentsTable);
+                                    }
+                                    Reset();
+                                    tempSegsFeatureClass.DeleteRows(new QueryFilter());
+                                    context.Invalidate(tempSegsFeatureClass);
+                                }
+
+                                if (!atLeastOne)
+                                {
+                                    context.Abort("There must be at least one feature in TempSegments!");
                                 }
                             }
-                            //    }
+                            else
+                            {
+                                //get segments from selected features
+                                while (segmentCursor.MoveNext())
+                                {
+                                    var segRow = segmentCursor.Current;
+
+                                    CreateRoutePart((string)segRow[USNG_SEG], (string)routeRow[RouteID], 1, context, routeToSegmentsTable);
+                                }
+                            }
 
                             // trailhead
                             if (HeadsLayer.SelectionCount == 1)
@@ -261,13 +236,26 @@ namespace TrailsAddin
             });
         }
 
-        private void EnsureIDs(EditOperation operation)
+        private void CreateRoutePart(string segID, string routeID, int part, IEditContext context, Table routeToSegmentsTable)
+        {
+            using (RowBuffer routeToSegBuf = routeToSegmentsTable.CreateRowBuffer())
+            {
+                routeToSegBuf[RouteID] = routeID;
+                routeToSegBuf[USNG_SEG] = segID;
+                routeToSegBuf[RoutePart] = 1;
+
+                var row = routeToSegmentsTable.CreateRow(routeToSegBuf);
+                context.Invalidate(row);
+            }
+        }
+
+        private void EnsureIDsForSelected(EditOperation operation)
         {
             using (RowCursor segmentsCursor = SegmentsLayer.GetSelection().Search()) {
                 while (segmentsCursor.MoveNext())
                 {
                     var row = segmentsCursor.Current;
-                    operation.Modify(SegmentsLayer, row.GetObjectID(), new Dictionary<string, object> { [USNG_SEG] = GetUSNGID_Line(row) });
+                    EnsureIDForSegment(row, operation);
                 }
             }
 
@@ -276,24 +264,36 @@ namespace TrailsAddin
                 while (headsCursor.MoveNext())
                 {
                     var row = headsCursor.Current;
-                    operation.Modify(HeadsLayer, row.GetObjectID(), new Dictionary<string, object> { [USNG_TH] = GetUSNGID_Point((MapPoint)row["Shape"]) });
+                    if (row[USNG_TH] == null || (string)row[USNG_TH] == "")
+                    {
+                        operation.Modify(HeadsLayer, row.GetObjectID(), new Dictionary<string, object> { [USNG_TH] = GetUSNGID_Point((MapPoint)row["Shape"]) });
+                    }
                 }
             }
         }
 
-        internal RowBuffer CopyRowValues(Row originRow, FeatureClass destinationFeatureClass)
+        private string EnsureIDForSegment(Row row, EditOperation operation)
         {
-            RowBuffer segRowBuf = destinationFeatureClass.CreateRowBuffer();
-
-            foreach (Field field in segRowBuf.GetFields())
+            if (row[USNG_SEG] == null || (string)row[USNG_SEG] == "")
             {
-                if (field.IsEditable && field.Name != "RoutePart")
-                {
-                    segRowBuf[field.Name] = originRow[field.Name];
-                }
+                var id = GetUSNGID_Line(row);
+                operation.Modify(SegmentsLayer, row.GetObjectID(), new Dictionary<string, object> { [USNG_SEG] = id });
+                return id;
+            } else
+            {
+                return (string)row[USNG_SEG];
             }
+        }
 
-            return segRowBuf;
+        internal void CopyRowValues(Row originRow, int partNumber, EditOperation operation)
+        {
+            var attributes = new Dictionary<string, object>();
+
+            attributes["SHAPE"] = originRow["SHAPE"];
+            attributes[USNG_SEG] = GetUSNGID_Line(originRow);
+            attributes[RoutePart] = partNumber;
+
+            operation.Create(TempSegmentsLayer, attributes);
         }
 
         private string GetUSNGID_Point(MapPoint point)
