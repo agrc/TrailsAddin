@@ -87,24 +87,26 @@ namespace TrailsAddin
                     while (segmentsCursor.MoveNext())
                     {
                         var id = EnsureIDForSegment(segmentsCursor.Current, operation);
-                        CopyRowValues(segmentsCursor.Current, currentPart, operation);
 
                         if (tempSegmentIDs.Contains(id))
                         {
                             MessageBox.Show($"This segment ({id}) has already been selected for the current part. Try creating a new part.");
+                            continue;
                         }
+
+                        CopyRowValues(segmentsCursor.Current, currentPart, operation);
+
                         tempSegmentIDs.Add(id);
                     }
 
                     bool success = operation.Execute();
-                    if (success)
-                    {
-                        SegmentsLayer.ClearSelection();
-                        TempSegmentsLayer.ClearSelection();
-                    } else
+                    if (!success)
                     {
                         MessageBox.Show(operation.ErrorMessage);
                     }
+
+                    SegmentsLayer.ClearSelection();
+                    TempSegmentsLayer.ClearSelection();
                 }
             });
         }
