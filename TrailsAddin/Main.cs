@@ -53,19 +53,13 @@ namespace TrailsAddin
 
         Main()
         {
-            try
-            {
-                // get layer references
-                SegmentsLayer = GetLayer("TrailSegments");
-                HeadsLayer = GetLayer("Trailheads");
-                TempSegmentsLayer = GetLayer("Temporary Segments");
-                USNGLayer = GetLayer("SGID10.INDICES.NationalGrid");
-                RoutesStandaloneTable = GetStandAloneTable("Routes");
-                RouteToTrailSegmentsTable = GetStandAloneTable("RouteToTrailSegments");
-            } catch
-            {
-                MessageBox.Show("Missing layer!");
-            }
+            // get layer references
+            SegmentsLayer = GetLayer("TrailSegments");
+            HeadsLayer = GetLayer("Trailheads");
+            TempSegmentsLayer = GetLayer("Temporary Segments");
+            USNGLayer = GetLayer("SGID10.INDICES.NationalGrid");
+            RoutesStandaloneTable = GetStandAloneTable("Routes");
+            RouteToTrailSegmentsTable = GetStandAloneTable("RouteToTrailSegments");
 
             MapSelectionChangedEvent.Subscribe((MapSelectionChangedEventArgs args) =>
             {
@@ -113,8 +107,15 @@ namespace TrailsAddin
 
         internal FeatureLayer GetLayer(string name)
         {
-            // TODO: add try statement so that error message can show missing layer name
-            return MapView.Active.Map.GetLayersAsFlattenedList().First(l => l.Name == name) as FeatureLayer;
+            try
+            { 
+                return MapView.Active.Map.GetLayersAsFlattenedList().First(l => l.Name == name) as FeatureLayer;
+            } catch
+            {
+                var msg = $"Missing layer: {name}!";
+                MessageBox.Show(msg);
+                throw new Exception(msg);
+            }
         }
 
         internal StandaloneTable GetStandAloneTable(string name)
