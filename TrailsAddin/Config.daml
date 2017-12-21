@@ -17,7 +17,7 @@
           <group refID="TrailsAddin_ToolsGroup" />
           <group refID="TrailsAddin_EditsGroup" />
           <group refID="TrailsAddin_IDsGroup" />
-          <group refID="TrailsAddin_PartsGroup"/>
+          <group refID="TrailsAddin_PartsGroup" />
         </tab>
       </tabs>
       <groups>

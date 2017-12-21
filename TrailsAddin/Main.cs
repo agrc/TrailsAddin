@@ -28,6 +28,7 @@ namespace TrailsAddin
         private int currentPart = 1;
         private FeatureLayer USNGLayer;
         public event EventHandler<OnNumPartsChangedArgs> OnNumPartsChanged;
+        private string SelectedRoute;
 
         // field names
         private string RouteName = "RouteName";
@@ -66,6 +67,21 @@ namespace TrailsAddin
                 if (BuildOnSelect && args.Selection.Keys.Contains(SegmentsLayer as MapMember))
                 {
                     AddSelectedToTemp();
+                }
+
+                if (args.Selection.Keys.Contains(RoutesStandaloneTable))
+                {
+                    if (RoutesStandaloneTable.SelectionCount == 0)
+                    {
+                        return;
+                    }
+
+                    if (RoutesStandaloneTable.SelectionCount > 1)
+                    {
+                        return;
+                    }
+
+                    ShowRoute();
                 }
             });
         }
@@ -390,6 +406,43 @@ namespace TrailsAddin
                 if (!success)
                 {
                     MessageBox.Show("Error cancelling new route!");
+                }
+            });
+        }
+
+        private void ShowRoute()
+        {
+            Reset();
+
+            QueuedTask.Run(() =>
+            {
+                using (var routesCursor = RoutesStandaloneTable.GetSelection().Search())
+                {
+                    routesCursor.MoveNext();
+                    var routeID = (string)routesCursor.Current[RouteID];
+
+                    if (SelectedRoute == routeID)
+                    {
+                        return;
+                    }
+                    SelectedRoute = routeID;
+
+                    SegmentsLayer.ClearSelection();
+                    HeadsLayer.ClearSelection();
+                    RouteToTrailSegmentsTable.ClearSelection();
+
+                    RouteToTrailSegmentsTable.Select(new QueryFilter() { WhereClause = $"{RouteID} = '{routeID}'" });
+
+                    var segmentIDs = new List<string>();
+                    using (var relationshipCursor = RouteToTrailSegmentsTable.GetSelection().Search())
+                    {
+                        while (relationshipCursor.MoveNext())
+                        {
+                            segmentIDs.Add((string)relationshipCursor.Current[USNG_SEG]);
+                        }
+                    }
+
+                    SegmentsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_SEG} IN ('{String.Join("', '", segmentIDs)}')" });
                 }
             });
         }
