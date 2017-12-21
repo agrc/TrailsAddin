@@ -196,6 +196,7 @@ namespace TrailsAddin
                         using (RowCursor headsCursor = HeadsLayer.GetSelection().Search(null, false))
                         using (RowCursor segmentCursor = SegmentsLayer.GetSelection().Search((QueryFilter)null, false))
                         {
+                            var segments = new List<Geometry>();
                             if (BuildOnSelect)
                             {
                                 // get segments from TempSegments layer
@@ -208,6 +209,8 @@ namespace TrailsAddin
                                         Row row = tempSegsCursor.Current;
 
                                         CreateRoutePart((string)row[USNG_SEG], (string)routeRow[RouteID], int.Parse(row[RoutePart].ToString()), context, routeToSegmentsTable);
+
+                                        segments.Add((Geometry)row["SHAPE"]);
                                     }
                                     Reset();
                                     tempSegsFeatureClass.DeleteRows(new QueryFilter());
@@ -227,6 +230,21 @@ namespace TrailsAddin
                                     var segRow = segmentCursor.Current;
 
                                     CreateRoutePart((string)segRow[USNG_SEG], (string)routeRow[RouteID], 1, context, routeToSegmentsTable);
+
+                                    segments.Add((Geometry)segRow["SHAPE"]);
+                                }
+                            }
+
+                            if (segments.Count > 1)
+                            {
+                                // validate topology of newly created route
+                                var unionedLine = (Polyline)GeometryEngine.Instance.Union(segments);
+                                var simplifiedLine = GeometryEngine.Instance.SimplifyPolyline(unionedLine, SimplifyType.Network, true);
+
+                                if (simplifiedLine.PartCount > 1)
+                                {
+                                    context.Abort("Not all segments are connected!");
+                                    return;
                                 }
                             }
 
