@@ -101,7 +101,6 @@
     <Compile Include="RouteNameEditBox.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ToggleCreateButton.cs" />
     <Compile Include="ToggleSelectCheckbox.cs" />
   </ItemGroup>
   <ItemGroup>
