@@ -8,5 +8,10 @@ namespace TrailsAddin
         {
             Main.Current.AddPart();
         }
+
+        protected override void OnUpdate()
+        {
+            Enabled = Main.Current.BuildOnSelect;
+        }
     }
 }
