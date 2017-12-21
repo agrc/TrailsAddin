@@ -73,15 +73,20 @@ namespace TrailsAddin
                 {
                     if (RoutesStandaloneTable.SelectionCount == 0)
                     {
+                        SelectedRoute = null;
                         return;
                     }
 
                     if (RoutesStandaloneTable.SelectionCount > 1)
                     {
+                        SelectedRoute = null;
                         return;
                     }
 
                     ShowRoute();
+                } else
+                {
+                    SelectedRoute = null;
                 }
             });
         }
