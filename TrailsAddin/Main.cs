@@ -466,6 +466,7 @@ namespace TrailsAddin
                     }
 
                     SegmentsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_SEG} IN ('{String.Join("', '", segmentIDs.Distinct())}')" });
+                    MapView.Active.ZoomToAsync(SegmentsLayer, true);
 
                     var headID = routesCursor.Current[THID_FK];
                     if (headID != null)
