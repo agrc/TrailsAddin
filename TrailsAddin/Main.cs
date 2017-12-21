@@ -448,6 +448,12 @@ namespace TrailsAddin
                     }
 
                     SegmentsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_SEG} IN ('{String.Join("', '", segmentIDs.Distinct())}')" });
+
+                    var headID = routesCursor.Current[THID_FK];
+                    if (headID != null)
+                    {
+                        HeadsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_TH} = '{(string)headID}'" });
+                    }
                 }
             });
         }
