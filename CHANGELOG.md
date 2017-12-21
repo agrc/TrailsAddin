@@ -1,3 +1,6 @@
+## v1.3.1
+- Zoom to route on selection.
+
 ## v1.3.0
 - Added validation logic for checking that all segments are connected when building a new route.
 
