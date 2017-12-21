@@ -447,7 +447,7 @@ namespace TrailsAddin
                         }
                     }
 
-                    SegmentsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_SEG} IN ('{String.Join("', '", segmentIDs)}')" });
+                    SegmentsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_SEG} IN ('{String.Join("', '", segmentIDs.Distinct())}')" });
                 }
             });
         }
