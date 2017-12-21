@@ -283,7 +283,7 @@ namespace TrailsAddin
                 while (headsCursor.MoveNext())
                 {
                     var row = headsCursor.Current;
-                    if (row[USNG_TH] == null || (string)row[USNG_TH] == "")
+                    if (row[USNG_TH] == null || (string)row[USNG_TH] == "" || (string)row[USNG_TH] == "<Null>")
                     {
                         operation.Modify(HeadsLayer, row.GetObjectID(), new Dictionary<string, object> { [USNG_TH] = GetUSNGID_Point((MapPoint)row["Shape"]) });
                     }
@@ -300,7 +300,7 @@ namespace TrailsAddin
 
         private string EnsureIDForSegment(Row row, EditOperation operation)
         {
-            if (row[USNG_SEG] == null || (string)row[USNG_SEG] == "")
+            if (row[USNG_SEG] == null || (string)row[USNG_SEG] == "" || (string)row[USNG_SEG] == "<Null>")
             {
                 var id = GetUSNGID_Line(row);
                 operation.Modify(SegmentsLayer, row.GetObjectID(), new Dictionary<string, object> { [USNG_SEG] = id });
