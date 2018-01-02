@@ -144,11 +144,10 @@ namespace TrailsAddin
             return MapView.Active.Map.StandaloneTables.First(l => l.Name == name) as StandaloneTable;
         }
 
-        public async void AddNewRoute(string name)
+        public async void AddNewRoute(string routeName)
         {
             var map = MapView.Active.Map;
             TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
-            string routeName = textInfo.ToTitleCase(name);
 
             if (HeadsLayer.SelectionCount > 1)
             {
