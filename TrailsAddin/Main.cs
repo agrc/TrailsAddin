@@ -170,7 +170,7 @@ namespace TrailsAddin
                 {
                     QueryFilter namesFilter = new QueryFilter()
                     {
-                        WhereClause = $"Upper({RouteName}) = '{routeName.ToUpper()}'"
+                        WhereClause = $"Upper({RouteName}) = '{routeName.ToUpper().Replace("'", "''")}'"
                     };
                     using (RowCursor namesCursor = RoutesStandaloneTable.Search(namesFilter))
                     {
