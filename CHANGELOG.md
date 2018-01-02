@@ -1,3 +1,9 @@
+## v1.3.2
+- Remove automatic title-casing of route names. This was causing issues with words that should not have been capitalized (e.g. "via").
+- Add support for route names with apostrophes.
+- Better validation of segment connectivity. This fixes the bug introduced in v1.3.0 that prevented multipart routes from being created.
+- Prevent the related route segment selection functionality from firing when "Build On Select" is selected.
+
 ## v1.3.1
 - Zoom to route on selection.
 
