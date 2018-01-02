@@ -195,7 +195,8 @@ namespace TrailsAddin
                         using (RowCursor headsCursor = HeadsLayer.GetSelection().Search(null, false))
                         using (RowCursor segmentCursor = SegmentsLayer.GetSelection().Search((QueryFilter)null, false))
                         {
-                            var segments = new List<Geometry>();
+                            var segments = new List<string>();
+                            var parts = new Dictionary<int, List<Polyline>>();
                             if (BuildOnSelect)
                             {
                                 // get segments from TempSegments layer
@@ -207,9 +208,20 @@ namespace TrailsAddin
                                         atLeastOne = true;
                                         Row row = tempSegsCursor.Current;
 
-                                        CreateRoutePart((string)row[USNG_SEG], (string)routeRow[RouteID], int.Parse(row[RoutePart].ToString()), context, routeToSegmentsTable);
+                                        var partNum = int.Parse(row[RoutePart].ToString());
+                                        var segID = (string)row[USNG_SEG];
+                                        CreateRoutePart(segID, (string)routeRow[RouteID], partNum, context, routeToSegmentsTable);
 
-                                        segments.Add((Geometry)row["SHAPE"]);
+                                        segments.Add(segID);
+
+                                        var geometry = (Polyline)row["SHAPE"];
+                                        if (parts.ContainsKey(partNum))
+                                        {
+                                            parts[partNum].Add(geometry);
+                                        } else
+                                        {
+                                            parts[partNum] = new List<Polyline>() { geometry };
+                                        }
                                     }
                                     Reset();
                                     tempSegsFeatureClass.DeleteRows(new QueryFilter());
@@ -228,23 +240,27 @@ namespace TrailsAddin
                                 {
                                     var segRow = segmentCursor.Current;
 
-                                    CreateRoutePart((string)segRow[USNG_SEG], (string)routeRow[RouteID], 1, context, routeToSegmentsTable);
+                                    var segID = (string)segRow[USNG_SEG];
+                                    var partNum = 1;
+                                    CreateRoutePart(segID, (string)routeRow[RouteID], partNum, context, routeToSegmentsTable);
 
-                                    segments.Add((Geometry)segRow["SHAPE"]);
+                                    segments.Add(segID);
+
+                                    var geometry = (Polyline)segRow["SHAPE"];
+                                    if (parts.ContainsKey(partNum))
+                                    {
+                                        parts[partNum].Add(geometry);
+                                    } else
+                                    {
+                                        parts[partNum] = new List<Polyline>() { geometry };
+                                    }
                                 }
                             }
 
-                            if (segments.Count > 1)
+                            if (segments.Count > 1 && !ValidateConnectivity(parts))
                             {
-                                // validate topology of newly created route
-                                var unionedLine = (Polyline)GeometryEngine.Instance.Union(segments);
-                                var simplifiedLine = GeometryEngine.Instance.SimplifyPolyline(unionedLine, SimplifyType.Network, true);
-
-                                if (simplifiedLine.PartCount > 1)
-                                {
-                                    context.Abort("Not all segments are connected!");
-                                    return;
-                                }
+                                context.Abort("Not all segments are connected!");
+                                return;
                             }
 
                             // trailhead
@@ -275,6 +291,43 @@ namespace TrailsAddin
                     }
                 }
             });
+        }
+
+        private bool ValidateConnectivity(Dictionary<int, List<Polyline>> parts)
+        {
+            var geoEngine = GeometryEngine.Instance;
+            var builder = new PolylineBuilder(SpatialReferenceBuilder.CreateSpatialReference(26912));
+            var partLines = new List<Polyline>();
+            foreach (int partNum in parts.Keys)
+            {
+                foreach (Polyline polyline in parts[partNum])
+                {
+                    builder.AddPart(polyline.Points);
+                }
+
+                var partLine = geoEngine.SimplifyPolyline(builder.ToGeometry(), SimplifyType.Network);
+
+                if (partLine.PartCount > 1)
+                {
+                    return false;
+                }
+
+                partLines.Add(partLine);
+                builder.SetEmpty();
+            }
+
+            foreach (Polyline partLine in partLines)
+            {
+                builder.AddPart(partLine.Points);
+            }
+            var routeLine = geoEngine.SimplifyPolyline(builder.ToGeometry(), SimplifyType.Network, true);
+
+            if (routeLine.PartCount > 1)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private void CreateRoutePart(string segID, string routeID, int part, IEditContext context, Table routeToSegmentsTable)
