@@ -69,7 +69,7 @@ namespace TrailsAddin
                     AddSelectedToTemp();
                 }
 
-                if (args.Selection.Keys.Contains(RoutesStandaloneTable))
+                if (args.Selection.Keys.Contains(RoutesStandaloneTable) && !BuildOnSelect)
                 {
                     if (RoutesStandaloneTable.SelectionCount == 0)
                     {
