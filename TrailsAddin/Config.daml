@@ -44,7 +44,7 @@
         </group>
       </groups>
       <controls>
-        <editBox id="RouteName_EditBox" caption="Name" className="RouteNameEditBox" dataType="string" sizeString="A Really Long Route Name" />
+        <editBox id="RouteName_EditBox" caption="Name" className="RouteNameEditBox" dataType="string" sizeString="A Really, Really, Really, Long Route Name" />
         <editBox id="NumSegments_EditBox" caption="Selected Segments" className="NumSegmentsEditBox" dataType="string" sizeString="10" />
         <editBox id="NumTrailheads_EditBox" caption="Selected Trailhead(s)" className="NumTrailheadsEditBox" dataType="string" sizeString="10" />
         <checkBox id="ToggleSelect_CheckBox" className="ToggleSelectCheckbox" caption="Build route on select" loadOnClick="false">
