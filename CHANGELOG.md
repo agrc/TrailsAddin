@@ -1,3 +1,8 @@
+## v1.4.0
+- Increased the route name edit box width to allow for longer route names.
+- Better line connection validation with line flipping (in memory only).
+- Add temporary overlays to help identify disconnected segments.
+
 ## v1.3.2
 - Remove automatic title-casing of route names. This was causing issues with words that should not have been capitalized (e.g. "via").
 - Add support for route names with apostrophes.
