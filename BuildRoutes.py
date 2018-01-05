@@ -66,7 +66,6 @@ with arcpy.da.SearchCursor(routesTable, fields) as routeCursor, \
                 #: check for line direction
                 if not points[points.count - 1].equals(part[0]):
                     #: flip part direction
-                    print('flipping')
                     reversedArray = arcpy.Array()
                     for index in range(part.count - 1, -1, -1):
                         reversedArray.add(part[index])
