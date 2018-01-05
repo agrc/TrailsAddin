@@ -318,7 +318,15 @@ namespace TrailsAddin
 
             foreach (Polyline partLine in partLines)
             {
-                builder.AddPart(partLine.Points);
+                // check to make sure that the last point of the main polyline matches with the first point of the new part
+                var mainLine = builder.ToGeometry();
+                if (mainLine.PointCount > 1 && mainLine.Points[mainLine.PointCount - 1].IsEqual(partLine.Points[0]))
+                {
+                    builder.AddPart(partLine.Points);
+                } else
+                {
+                    builder.AddPart(partLine.Points.Reverse());
+                }
             }
             var routeLine = geoEngine.SimplifyPolyline(builder.ToGeometry(), SimplifyType.Network, true);
 
