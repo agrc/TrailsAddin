@@ -12,6 +12,7 @@ using ArcGIS.Core.Geometry;
 using System.Collections.Generic;
 using static ArcGIS.Desktop.Editing.EditOperation;
 using ArcGIS.Desktop.Mapping.Events;
+using ArcGIS.Core.CIM;
 
 namespace TrailsAddin
 {
@@ -29,6 +30,7 @@ namespace TrailsAddin
         private FeatureLayer USNGLayer;
         public event EventHandler<OnNumPartsChangedArgs> OnNumPartsChanged;
         private string SelectedRoute;
+        private List<IDisposable> overlays = new List<IDisposable>();
 
         // field names
         private string RouteName = "RouteName";
@@ -309,6 +311,19 @@ namespace TrailsAddin
 
                 if (partLine.PartCount > 1)
                 {
+                    var colorFactory = ColorFactory.Instance;
+                    var colors = new CIMColor[4] { colorFactory.BlueRGB, colorFactory.RedRGB, colorFactory.GreenRGB, colorFactory.WhiteRGB };
+
+                    for (var i = 0; i < partLine.Parts.Count; i++)
+                    {
+                        var part = partLine.Parts[i];
+                        var partBuilder = new PolylineBuilder(SpatialReferenceBuilder.CreateSpatialReference(26912));
+                        partBuilder.AddPart(part);
+                        var colorNum = 50 * i;
+                        var symbol = SymbolFactory.Instance.ConstructLineSymbol(colors[i], 8).MakeSymbolReference();
+                        overlays.Add(MapView.Active.AddOverlay(partBuilder.ToGeometry(), symbol));
+                    }
+                    
                     return false;
                 }
 
@@ -466,6 +481,13 @@ namespace TrailsAddin
             tempSegmentIDs.Clear();
             currentPart = 1;
             OnNumPartsChanged(this, new OnNumPartsChangedArgs(currentPart));
+            
+            foreach (var overlay in overlays)
+            {
+                overlay.Dispose();
+            }
+
+            overlays.Clear();
         }
 
         internal void OnCancelButtonClick()
