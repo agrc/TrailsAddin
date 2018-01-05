@@ -311,19 +311,8 @@ namespace TrailsAddin
 
                 if (partLine.PartCount > 1)
                 {
-                    var colorFactory = ColorFactory.Instance;
-                    var colors = new CIMColor[4] { colorFactory.BlueRGB, colorFactory.RedRGB, colorFactory.GreenRGB, colorFactory.WhiteRGB };
+                    ShowInvalidOverlays(partLine);
 
-                    for (var i = 0; i < partLine.Parts.Count; i++)
-                    {
-                        var part = partLine.Parts[i];
-                        var partBuilder = new PolylineBuilder(SpatialReferenceBuilder.CreateSpatialReference(26912));
-                        partBuilder.AddPart(part);
-                        var colorNum = 50 * i;
-                        var symbol = SymbolFactory.Instance.ConstructLineSymbol(colors[i], 8).MakeSymbolReference();
-                        overlays.Add(MapView.Active.AddOverlay(partBuilder.ToGeometry(), symbol));
-                    }
-                    
                     return false;
                 }
 
@@ -347,10 +336,28 @@ namespace TrailsAddin
 
             if (routeLine.PartCount > 1)
             {
+                ShowInvalidOverlays(routeLine);
+
                 return false;
             }
 
             return true;
+        }
+
+        private void ShowInvalidOverlays(Polyline multipartLine)
+        {
+            var colorFactory = ColorFactory.Instance;
+            var colors = new CIMColor[4] { colorFactory.BlueRGB, colorFactory.RedRGB, colorFactory.GreenRGB, colorFactory.WhiteRGB };
+
+            for (var i = 0; i < multipartLine.Parts.Count; i++)
+            {
+                var part = multipartLine.Parts[i];
+                var partBuilder = new PolylineBuilder(SpatialReferenceBuilder.CreateSpatialReference(26912));
+                partBuilder.AddPart(part);
+                var colorNum = 50 * i;
+                var symbol = SymbolFactory.Instance.ConstructLineSymbol(colors[i], 8).MakeSymbolReference();
+                overlays.Add(MapView.Active.AddOverlay(partBuilder.ToGeometry(), symbol));
+            }
         }
 
         private void CreateRoutePart(string segID, string routeID, int part, IEditContext context, Table routeToSegmentsTable)
