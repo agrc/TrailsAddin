@@ -23,6 +23,7 @@ namespace TrailsAddin
         public FeatureLayer HeadsLayer;
         public StandaloneTable RoutesStandaloneTable;
         public StandaloneTable RouteToTrailSegmentsTable;
+        public StandaloneTable RouteToTrailheadsTable;
         private FeatureLayer TempSegmentsLayer;
         public bool BuildOnSelect = false;
         private List<string> tempSegmentIDs = new List<string>();
@@ -63,6 +64,7 @@ namespace TrailsAddin
             USNGLayer = GetLayer("SGID10.INDICES.NationalGrid");
             RoutesStandaloneTable = GetStandAloneTable("Routes");
             RouteToTrailSegmentsTable = GetStandAloneTable("RouteToTrailSegments");
+            RouteToTrailheadsTable = GetStandAloneTable("RouteToTrailheads");
 
             MapSelectionChangedEvent.Subscribe((MapSelectionChangedEventArgs args) =>
             {
@@ -151,12 +153,6 @@ namespace TrailsAddin
             var map = MapView.Active.Map;
             TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
 
-            if (HeadsLayer.SelectionCount > 1)
-            {
-                MessageBox.Show("A route may have only one trail head!", "New Route Aborted");
-                return;
-            }
-
             if (!BuildOnSelect && SegmentsLayer.SelectionCount == 0)
             {
                 MessageBox.Show("At least one segment must be selected!");
@@ -166,6 +162,7 @@ namespace TrailsAddin
             await QueuedTask.Run(() =>
             {
                 using (Table routesTable = RoutesStandaloneTable.GetTable())
+                using (Table routeToHeadsTable = RouteToTrailheadsTable.GetTable())
                 using (Table routeToSegmentsTable = RouteToTrailSegmentsTable.GetTable())
                 using (RowBuffer routeBuf = routesTable.CreateRowBuffer())
                 using (FeatureClass tempSegsFeatureClass = TempSegmentsLayer.GetFeatureClass())
@@ -266,15 +263,25 @@ namespace TrailsAddin
                             }
 
                             // trailhead
-                            if (HeadsLayer.SelectionCount == 1)
+                            if (HeadsLayer.SelectionCount > 0)
                             {
-                                headsCursor.MoveNext();
-                                routeRow[THID_FK] = headsCursor.Current[USNG_TH];
+                                while (headsCursor.MoveNext())
+                                {
+                                    var headBuffer = routeToHeadsTable.CreateRowBuffer();
+                                    headBuffer[RouteID] = (string)routeRow[RouteID];
+                                    headBuffer[USNG_TH] = headsCursor.Current[USNG_TH];
+
+                                    var headRow = routeToHeadsTable.CreateRow(headBuffer);
+
+                                    context.Invalidate(headRow);
+                                    headBuffer.Dispose();
+                                    headRow.Dispose();
+                                }
                             }
 
                             context.Invalidate(routeRow);
                         }
-                    }, routesTable, routeToSegmentsTable, tempSegsFeatureClass);
+                    }, routesTable, routeToSegmentsTable, routeToHeadsTable, tempSegsFeatureClass);
 
                     operation.Execute();
                     if (operation.IsSucceeded)
