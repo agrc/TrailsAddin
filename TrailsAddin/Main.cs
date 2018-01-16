@@ -38,7 +38,6 @@ namespace TrailsAddin
         private string RouteName = "RouteName";
         private string THID_FK = "THID_FK";
         private string RouteID = "RouteID";
-        private string OutAndBack = "OutAndBack";
 
         private string USNG_SEG = "USNG_SEG";
         private string RoutePart = "RoutePart";
@@ -190,7 +189,6 @@ namespace TrailsAddin
                         // create route row
                         routeBuf[RouteName] = routeName;
                         routeBuf[RouteID] = $"{{{Guid.NewGuid()}}}";
-                        routeBuf[OutAndBack] = "Yes";
                         using (Row routeRow = routesTable.CreateRow(routeBuf))
                         using (RowCursor headsCursor = HeadsLayer.GetSelection().Search(null, false))
                         using (RowCursor segmentCursor = SegmentsLayer.GetSelection().Search((QueryFilter)null, false))
