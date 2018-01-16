@@ -8,5 +8,10 @@
 
             Text = "";
         }
+
+        protected override void OnTextChange(string text)
+        {
+            Main.Current.ChangeRouteName(text);
+        }
     }
 }

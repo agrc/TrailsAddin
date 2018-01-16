@@ -95,6 +95,7 @@
   <ItemGroup>
     <Compile Include="AddIDs.cs" />
     <Compile Include="AddPart.cs" />
+    <Compile Include="NumRouteCharsEditBox.cs" />
     <Compile Include="NumTrailheadsEditBox.cs" />
     <Compile Include="NumSegmentsEditBox.cs" />
     <Compile Include="NumPartsEditBox.cs" />

@@ -27,6 +27,7 @@
           <editBox refID="RouteName_EditBox" />
           <editBox refID="NumSegments_EditBox" />
           <editBox refID="NumTrailheads_EditBox" />
+          <editBox refID="NumRouteTrails_EditBox" />
           <checkBox refID="ToggleSelect_CheckBox" />
           <button refID="Cancel_Button" />
         </group>
@@ -60,6 +61,7 @@
           <tooltip heading="Tooltip Heading">Tooltip text<disabledText /></tooltip>
         </button>
         <editBox id="Parts_EditBox" caption="Parts" className="NumPartsEditBox" dataType="string" sizeString="10" />
+        <editBox id="NumRouteTrails_EditBox" caption="Route Character(s)" className="NumRouteCharsEditBox" dataType="string" sizeString="50" />
       </controls>
     </insertModule>
   </modules>

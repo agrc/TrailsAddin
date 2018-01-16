@@ -30,6 +30,7 @@ namespace TrailsAddin
         private int currentPart = 1;
         private FeatureLayer USNGLayer;
         public event EventHandler<OnNumPartsChangedArgs> OnNumPartsChanged;
+        public event EventHandler<OnRouteNameChangedArgs> OnRouteNameChanged;
         private string SelectedRoute;
         private List<IDisposable> overlays = new List<IDisposable>();
 
@@ -585,6 +586,11 @@ namespace TrailsAddin
             return true;
         }
 
+        internal void ChangeRouteName(string text)
+        {
+            OnRouteNameChanged(this, new OnRouteNameChangedArgs(text));
+        }
+
         #endregion Overrides
     }
 
@@ -594,6 +600,15 @@ namespace TrailsAddin
         public OnNumPartsChangedArgs(int newNumber)
         {
             numParts = newNumber;
+        }
+    }
+
+    class OnRouteNameChangedArgs : EventArgs
+    {
+        public string name { get; set; }
+        public OnRouteNameChangedArgs(string newName)
+        {
+            name = newName;
         }
     }
 }
