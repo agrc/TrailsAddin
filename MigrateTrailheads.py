@@ -10,8 +10,8 @@ routeToTrailheads = 'RouteToTrailheads'
 
 arcpy.env.workspace = sde
 
-print('truncating')
-arcpy.management.TruncateTable(routeToTrailheads)
+# print('truncating')
+# arcpy.management.TruncateTable(routeToTrailheads)
 
 with arcpy.da.SearchCursor(routes, ['RouteID', 'THID_FK']) as routeCursor, arcpy.da.InsertCursor(routeToTrailheads, ['RouteID', 'USNG_TH']) as insertCursor:
     for routeID, thid_FK in routeCursor:
