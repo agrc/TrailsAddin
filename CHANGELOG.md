@@ -1,3 +1,8 @@
+## v1.5.0
+- Add support for multiple trailheads per route. NOTE: Need to add the RouteToTrailheads table to your project.
+- Add route name character count box.
+- Change "OneWay" field to "RouteType"
+
 ## v1.4.0
 - Increased the route name edit box width to allow for longer route names.
 - Better line connection validation with line flipping (in memory only).
