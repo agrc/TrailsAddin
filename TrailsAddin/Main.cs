@@ -36,13 +36,15 @@ namespace TrailsAddin
 
         // field names
         private string RouteName = "RouteName";
-        private string THID_FK = "THID_FK";
         private string RouteID = "RouteID";
 
         private string USNG_SEG = "USNG_SEG";
         private string RoutePart = "RoutePart";
 
         private string USNG_TH = "USNG_TH";
+
+        // dataset names
+        private string RouteToTrailheads = "RouteToTrailheads";
 
         /// <summary>
         /// Retrieve the singleton instance to this module here
@@ -64,7 +66,7 @@ namespace TrailsAddin
             USNGLayer = GetLayer("SGID10.INDICES.NationalGrid");
             RoutesStandaloneTable = GetStandAloneTable("Routes");
             RouteToTrailSegmentsTable = GetStandAloneTable("RouteToTrailSegments");
-            RouteToTrailheadsTable = GetStandAloneTable("RouteToTrailheads");
+            RouteToTrailheadsTable = GetStandAloneTable(RouteToTrailheads);
 
             MapSelectionChangedEvent.Subscribe((MapSelectionChangedEventArgs args) =>
             {
@@ -549,25 +551,22 @@ namespace TrailsAddin
                     HeadsLayer.ClearSelection();
                     RouteToTrailSegmentsTable.ClearSelection();
 
-                    RouteToTrailSegmentsTable.Select(new QueryFilter() { WhereClause = $"{RouteID} = '{routeID}'" });
+                    var routeIDQuery = $"{RouteID} = '{routeID}'";
+                    RouteToTrailSegmentsTable.Select(new QueryFilter() { WhereClause = routeIDQuery });
 
                     var segmentIDs = new List<string>();
-                    using (var relationshipCursor = RouteToTrailSegmentsTable.GetSelection().Search())
+                    using (var segmentsRelationshipCursor = RouteToTrailSegmentsTable.GetSelection().Search())
                     {
-                        while (relationshipCursor.MoveNext())
+                        while (segmentsRelationshipCursor.MoveNext())
                         {
-                            segmentIDs.Add((string)relationshipCursor.Current[USNG_SEG]);
+                            segmentIDs.Add((string)segmentsRelationshipCursor.Current[USNG_SEG]);
                         }
                     }
 
                     SegmentsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_SEG} IN ('{String.Join("', '", segmentIDs.Distinct())}')" });
-                    MapView.Active.ZoomToAsync(SegmentsLayer, true);
+                    HeadsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_TH} IN (SELECT {USNG_TH} FROM {RouteToTrailheads} WHERE {routeIDQuery})" });
 
-                    var headID = routesCursor.Current[THID_FK];
-                    if (headID != null)
-                    {
-                        HeadsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_TH} = '{(string)headID}'" });
-                    }
+                    MapView.Active.ZoomToAsync(new [] { SegmentsLayer, HeadsLayer }, true);
                 }
             });
         }
