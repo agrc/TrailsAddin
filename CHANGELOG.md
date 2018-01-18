@@ -1,3 +1,9 @@
+# TrailsAddin Changelog
+
+## v1.6.0
+- Make zoom to route work with multiple trailheads.
+- Create RoutesToolbox.pyt and BuildRouteLines tool.
+
 ## v1.5.0
 - Add support for multiple trailheads per route. NOTE: Need to add the RouteToTrailheads table to your project.
 - Add route name character count box.
