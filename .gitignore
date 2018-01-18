@@ -246,3 +246,4 @@ ProProject/scratch.gdb/
 *.sde
 *.pyHistory
 .DS_Store
+*.pyt.xml
