@@ -22,6 +22,7 @@ fldRoutePart = 'RoutePart'
 
 shapeToken = 'SHAPE@'
 utm = arcpy.SpatialReference(26912)
+outAndBack = 'Out & Back'
 
 
 class Toolbox(object):
@@ -134,6 +135,12 @@ class BuildRouteLines(object):
                                     part = reversedArray
                             for point in part:
                                 points.add(point)
+
+                        if routeType == outAndBack:
+                            #: add new part(s) in reverse for the "back" of out and back
+                            copyPoints = list(points)
+                            for index in range(len(copyPoints) - 1, -1, -1):
+                                points.add(copyPoints[index])
 
                         line = arcpy.Polyline(points, utm)
 
