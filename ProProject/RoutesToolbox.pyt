@@ -153,6 +153,10 @@ class BuildRouteLines(object):
                     count += 1
                     arcpy.SetProgressorPosition()
 
+            messages.AddMessage('calculating lengths')
+            arcpy.SetProgressor('default')
+
+            arcpy.management.AddGeometryAttributes(routeLinesFC, 'LENGTH', Length_Unit='MILES_US')
         messages.addMessage('{} routes processed.'.format(count))
 
         if len(errors) > 0:
