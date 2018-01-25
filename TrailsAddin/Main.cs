@@ -564,7 +564,8 @@ namespace TrailsAddin
                     }
 
                     SegmentsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_SEG} IN ('{String.Join("', '", segmentIDs.Distinct())}')" });
-                    HeadsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_TH} IN (SELECT {USNG_TH} FROM {RouteToTrailheads} WHERE {routeIDQuery})" });
+
+                    HeadsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_TH} IN (SELECT {USNG_TH} FROM UtahTrails.TRAILSADMIN.{RouteToTrailheads} WHERE {routeIDQuery})" });
 
                     MapView.Active.ZoomToAsync(new [] { SegmentsLayer, HeadsLayer }, true);
                 }
