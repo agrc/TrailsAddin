@@ -1,5 +1,8 @@
 # TrailsAddin Changelog
 
+## v1.6.1
+- Fix bug causing issues with zooming to routes in production database.
+
 ## v1.6.0
 - Make zoom to route work with multiple trailheads.
 - Create RoutesToolbox.pyt and BuildRouteLines tool.

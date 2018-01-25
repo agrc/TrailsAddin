@@ -1,5 +1,5 @@
 ﻿<ArcGIS defaultAssembly="TrailsAddin.dll" defaultNamespace="TrailsAddin" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
-  <AddInInfo id="{302c3d3b-3132-4d2c-923d-4a325e801d8c}" version="1.6.0" desktopVersion="2.0.8933">
+  <AddInInfo id="{302c3d3b-3132-4d2c-923d-4a325e801d8c}" version="1.6.1" desktopVersion="2.0.8933">
     <Name>Trails</Name>
     <Description>Tools for working with SGID Trails data</Description>
     <Image>Images\AddinDesktop32.png</Image>
