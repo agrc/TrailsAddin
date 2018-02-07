@@ -18,6 +18,7 @@
           <group refID="TrailsAddin_EditsGroup" />
           <group refID="TrailsAddin_IDsGroup" />
           <group refID="TrailsAddin_PartsGroup" />
+          <group refID="TrailsAddin_Review" />
         </tab>
       </tabs>
       <groups>
@@ -33,7 +34,7 @@
         </group>
         <group id="TrailsAddin_PartsGroup" caption="Parts">
           <button refID="TrailsAddin_AddPart" />
-          <editBox refID="Parts_EditBox"/>
+          <editBox refID="Parts_EditBox" />
         </group>
         <group id="TrailsAddin_EditsGroup" caption="Edits">
           <button refID="esri_editing_ShowAttributes" />
@@ -42,6 +43,9 @@
         </group>
         <group id="TrailsAddin_IDsGroup" caption="Tools">
           <button refID="TrailsAddin_AddIDs" />
+        </group>
+        <group id="TrailsAddin_Review" caption="Review">
+          <comboBox refID="TrailsAddin_ReviewDropDown" />
         </group>
       </groups>
       <controls>
@@ -62,6 +66,9 @@
         </button>
         <editBox id="Parts_EditBox" caption="Parts" className="NumPartsEditBox" dataType="string" sizeString="10" />
         <editBox id="NumRouteTrails_EditBox" caption="Route Character(s)" className="NumRouteCharsEditBox" dataType="string" sizeString="50" />
+        <comboBox id="TrailsAddin_ReviewDropDown" caption="" className="ReviewComboBox" itemWidth="140" extendedCaption="Extended Caption" isEditable="false" isReadOnly="true" resizable="true">
+          <tooltip heading="Tooltip Heading">Choose an option to select rows that may have issues.<disabledText /></tooltip>
+        </comboBox>
       </controls>
     </insertModule>
   </modules>

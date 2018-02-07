@@ -25,6 +25,7 @@ namespace TrailsAddin
         public StandaloneTable RouteToTrailSegmentsTable;
         public StandaloneTable RouteToTrailheadsTable;
         private FeatureLayer TempSegmentsLayer;
+        internal FeatureLayer RouteLinesLayer;
         public bool BuildOnSelect = false;
         private List<string> tempSegmentIDs = new List<string>();
         private int currentPart = 1;
@@ -35,16 +36,19 @@ namespace TrailsAddin
         private List<IDisposable> overlays = new List<IDisposable>();
 
         // field names
-        private string RouteName = "RouteName";
-        private string RouteID = "RouteID";
+        internal string RouteName = "RouteName";
+        internal string RouteID = "RouteID";
 
-        private string USNG_SEG = "USNG_SEG";
-        private string RoutePart = "RoutePart";
+        internal string USNG_SEG = "USNG_SEG";
+        internal string RoutePart = "RoutePart";
 
-        private string USNG_TH = "USNG_TH";
+        internal string USNG_TH = "USNG_TH";
 
         // dataset names
-        private string RouteToTrailheads = "RouteToTrailheads";
+        internal string RouteToTrailheads = "RouteToTrailheads";
+        internal string TrailSegments = "TrailSegments";
+        internal string Trailheads = "Trailheads";
+        internal string Routes = "Routes";
 
         /// <summary>
         /// Retrieve the singleton instance to this module here
@@ -60,13 +64,14 @@ namespace TrailsAddin
         Main()
         {
             // get layer references
-            SegmentsLayer = GetLayer("TrailSegments");
-            HeadsLayer = GetLayer("Trailheads");
+            SegmentsLayer = GetLayer(TrailSegments);
+            HeadsLayer = GetLayer(Trailheads);
             TempSegmentsLayer = GetLayer("Temporary Segments");
             USNGLayer = GetLayer("SGID10.INDICES.NationalGrid");
-            RoutesStandaloneTable = GetStandAloneTable("Routes");
+            RoutesStandaloneTable = GetStandAloneTable(Routes);
             RouteToTrailSegmentsTable = GetStandAloneTable("RouteToTrailSegments");
             RouteToTrailheadsTable = GetStandAloneTable(RouteToTrailheads);
+            RouteLinesLayer = GetLayer("RouteLines");
 
             MapSelectionChangedEvent.Subscribe((MapSelectionChangedEventArgs args) =>
             {
@@ -583,13 +588,12 @@ namespace TrailsAddin
             //return false to ~cancel~ Application close
             return true;
         }
+        #endregion Overrides
 
         internal void ChangeRouteName(string text)
         {
             OnRouteNameChanged(this, new OnRouteNameChangedArgs(text));
         }
-
-        #endregion Overrides
     }
 
     class OnNumPartsChangedArgs : EventArgs

@@ -3,13 +3,13 @@ RoutesToolbox.py
 
 A tool that builds trail routes polylines from the Routes and Segments data.
 '''
-from os.path import dirname
+from os.path import dirname, join
 
 import arcpy
 
-routeLinesFC = 'RouteLines'
-routeToSegmentsTable = 'RouteToTrailSegments'
-segmentsFC = 'TrailSegments'
+routeLinesFC = 'UtahTrails.TRAILSADMIN.RouteLines'
+routeToSegmentsTable = 'UtahTrails.TRAILSADMIN.RouteToTrailSegments'
+segmentsFC = 'UtahTrails.TRAILSADMIN.TrailSegments'
 
 #: fields
 fldRouteName = 'RouteName'
@@ -33,7 +33,57 @@ class Toolbox(object):
         self.alias = ""
 
         # List of tool classes associated with this toolbox
-        self.tools = [BuildRouteLines]
+        self.tools = [BuildRouteLines, FindRouteLineIssues]
+
+
+class FindRouteLineIssues(object):
+    def __init__(self):
+        self.label = 'FindRouteLineIssues'
+        self.description = 'Find RouteLines features that are not overlapped by TrailSegments features.'
+        self.canRunInBackground = True
+
+    def getParameterInfo(self):
+        route_lines_param = arcpy.Parameter(displayName='RouteLines Layer',
+                                            name='route_lines_layer',
+                                            datatype='GPFeatureLayer',
+                                            parameterType='Required',
+                                            direction='input')
+        segments_param = arcpy.Parameter(displayName='TrailSegments Layer',
+                                         name='segments_layer',
+                                         datatype='GPFeatureLayer',
+                                         parameterType='Required',
+                                         direction='input')
+
+        return [route_lines_param, segments_param]
+
+    def execute(self, parameters, messages):
+        routeLinesLayer = parameters[0].valueAsText
+        segmentsLayer = parameters[1].valueAsText
+        nonoverlapping = join(arcpy.env.scratchGDB, 'nonoverlapping')
+
+        messages.addMessage('clearing selection on layers')
+        arcpy.management.SelectLayerByAttribute(routeLinesLayer, 'CLEAR_SELECTION')
+        arcpy.management.SelectLayerByAttribute(segmentsLayer, 'CLEAR_SELECTION')
+
+        if arcpy.Exists(nonoverlapping):
+            messages.addMessage('removing old output')
+            arcpy.management.Delete(nonoverlapping)
+
+        messages.addMessage('running symmetrical difference tool')
+        arcpy.analysis.SymDiff(routeLinesLayer, segmentsLayer, nonoverlapping)
+
+        messages.addMessage('gathering routeIDs from output')
+        ids = []
+        with arcpy.da.SearchCursor(nonoverlapping, 'RouteID', 'RouteID IS NOT NULL') as cursor:
+            for routeID, in cursor:
+                ids.append(routeID)
+
+        if len(ids) > 0:
+            messages.addMessage('selecting route lines')
+            query = 'RouteID IN (\'{}\')'.format('\', \''.join(ids))
+            arcpy.management.SelectLayerByAttribute(routeLinesLayer, 'NEW_SELECTION', query)
+        else:
+            messages.addMessage('No problems found!')
 
 
 class BuildRouteLines(object):
@@ -41,7 +91,7 @@ class BuildRouteLines(object):
         """Define the tool (tool name is the name of the class)."""
         self.label = "BuildRouteLines"
         self.description = "Build routes as polylines."
-        self.canRunInBackground = False
+        self.canRunInBackground = True
 
     def getParameterInfo(self):
         """Define parameter definitions"""
