@@ -1,5 +1,9 @@
 # TrailsAddin Changelog
 
+## v1.7.0
+- Add dropdown for selecting rows in tables with issues.
+- Add FindRouteLineIssues to toolbox.
+
 ## v1.6.1
 - Fix bug causing issues with zooming to routes in production database.
 
