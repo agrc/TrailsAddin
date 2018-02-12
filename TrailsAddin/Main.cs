@@ -558,6 +558,7 @@ namespace TrailsAddin
 
                     var routeIDQuery = $"{RouteID} = '{routeID}'";
                     RouteToTrailSegmentsTable.Select(new QueryFilter() { WhereClause = routeIDQuery });
+                    RouteToTrailheadsTable.Select(new QueryFilter() { WhereClause = routeIDQuery });
 
                     var segmentIDs = new List<string>();
                     using (var segmentsRelationshipCursor = RouteToTrailSegmentsTable.GetSelection().Search())
