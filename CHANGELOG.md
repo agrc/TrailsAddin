@@ -1,5 +1,9 @@
 # TrailsAddin Changelog
 
+## v1.7.2
+- Add selection of RouteToTrailheads table to route select process
+- Remove unused RouteLines feature layer reference
+
 ## v1.7.0
 - Add dropdown for selecting rows in tables with issues.
 - Add FindRouteLineIssues to toolbox.
