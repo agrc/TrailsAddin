@@ -62,3 +62,7 @@ Assert:
 1. Click on "AddIDs".
 
 Assert that the selected features were assigned IDs.
+
+## Review Drop Down
+1. Unselect "Build route on select".
+1. Select an option in the review drop down and verify that the appropriate records in the associated table were selected.
