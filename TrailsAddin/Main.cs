@@ -25,7 +25,6 @@ namespace TrailsAddin
         public StandaloneTable RouteToTrailSegmentsTable;
         public StandaloneTable RouteToTrailheadsTable;
         private FeatureLayer TempSegmentsLayer;
-        internal FeatureLayer RouteLinesLayer;
         public bool BuildOnSelect = false;
         private List<string> tempSegmentIDs = new List<string>();
         private int currentPart = 1;
@@ -71,7 +70,6 @@ namespace TrailsAddin
             RoutesStandaloneTable = GetStandAloneTable(Routes);
             RouteToTrailSegmentsTable = GetStandAloneTable("RouteToTrailSegments");
             RouteToTrailheadsTable = GetStandAloneTable(RouteToTrailheads);
-            RouteLinesLayer = GetLayer("RouteLines");
 
             MapSelectionChangedEvent.Subscribe((MapSelectionChangedEventArgs args) =>
             {
