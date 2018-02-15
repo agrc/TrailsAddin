@@ -245,7 +245,7 @@ namespace TrailsAddin
 
                                     var segID = (string)segRow[USNG_SEG];
                                     var partNum = 1;
-                                    CreateRoutePart(segID, (string)routeRow[RouteID], partNum, context, routeToSegmentsTable);
+                                    CreateRoutePart(segID, routeRow[RouteID], partNum, context, routeToSegmentsTable);
 
                                     segments.Add(segID);
 
@@ -371,7 +371,7 @@ namespace TrailsAddin
             }
         }
 
-        private void CreateRoutePart(string segID, string routeID, int part, IEditContext context, Table routeToSegmentsTable)
+        private void CreateRoutePart(string segID, object routeID, int part, IEditContext context, Table routeToSegmentsTable)
         {
             using (RowBuffer routeToSegBuf = routeToSegmentsTable.CreateRowBuffer())
             {
@@ -381,6 +381,7 @@ namespace TrailsAddin
 
                 var row = routeToSegmentsTable.CreateRow(routeToSegBuf);
                 context.Invalidate(row);
+                row.Dispose();
             }
         }
 
