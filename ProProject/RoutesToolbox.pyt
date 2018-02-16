@@ -25,6 +25,14 @@ utm = arcpy.SpatialReference(26912)
 outAndBack = 'Out & Back'
 
 
+def reverse(input_array):
+    reversedArray = arcpy.Array()
+    for index in range(input_array.count - 1, -1, -1):
+        reversedArray.add(input_array[index])
+
+    return reversedArray
+
+
 class Toolbox(object):
     def __init__(self):
         """Define the toolbox (the name of the toolbox is the name of the
@@ -173,24 +181,22 @@ class BuildRouteLines(object):
                             parts.append(partLine)
 
                         points = arcpy.Array()
+
                         for linePart in parts:
                             part = linePart.getPart(0)
                             if points.count > 0:
                                 #: check for line direction
                                 if not points[points.count - 1].equals(part[0]):
-                                    #: flip part direction
-                                    reversedArray = arcpy.Array()
-                                    for index in range(part.count - 1, -1, -1):
-                                        reversedArray.add(part[index])
-                                    part = reversedArray
+
+                                    #: try flipping next part direction
+                                    if points[points.count - 1].equals(part[-1]):
+                                        part = reverse(part)
+                                    elif points[0].equals(part[0]):
+                                        #: flip first part direction
+                                        points = reverse(points)
+
                             for point in part:
                                 points.add(point)
-
-                        if routeType == outAndBack:
-                            #: add new part(s) in reverse for the "back" of out and back
-                            copyPoints = list(points)
-                            for index in range(len(copyPoints) - 1, -1, -1):
-                                points.add(copyPoints[index])
 
                         line = arcpy.Polyline(points, utm)
 
