@@ -16,13 +16,19 @@ fldRouteName = 'RouteName'
 fldTHID_FK = 'THID_FK'
 fldRouteID = 'RouteID'
 fldRouteType = 'RouteType'
-fldURL = 'URL'
+fldUrl = 'Url'
 fldUSNG_SEG = 'USNG_SEG'
 fldRoutePart = 'RoutePart'
+fldLENGTH = 'LENGTH'
+fldElevationGain = 'ElevationGain'
+fldElevationProfile = 'ElevationProfile'
 
 shapeToken = 'SHAPE@'
 utm = arcpy.SpatialReference(26912)
 outAndBack = 'Out & Back'
+interpolated = join(arcpy.env.scratchGDB, 'interpolatedRouteLines')
+profile_points_max_num = 100
+meters_to_feet = 3.28084
 
 
 def reverse(input_array):
@@ -108,8 +114,13 @@ class BuildRouteLines(object):
                                              datatype='GPTableView',
                                              parameterType='Required',
                                              direction='input')
+        dem_param = arcpy.Parameter(displayName='SGID10.RASTER.USGS_DEM_10Meter',
+                                    name='dem',
+                                    datatype='DERasterDataset',
+                                    parameterType='Required',
+                                    direction='input')
 
-        return [routes_table_param]
+        return [routes_table_param, dem_param]
 
     def isLicensed(self):
         """Set whether tool is licensed to execute."""
@@ -128,29 +139,31 @@ class BuildRouteLines(object):
 
     def execute(self, parameters, messages):
         routesTable = parameters[0].valueAsText
+        dem = parameters[1].valueAsText
         routesDescribe = arcpy.Describe(routesTable)
 
         arcpy.env.workspace = dirname(routesDescribe.catalogPath)
+        messages.AddMessage(arcpy.env.workspace)
+
+        if routesDescribe.FIDSet in [None, '']:
+            messages.addMessage('truncating all route lines')
+            deleteQuery = None
+            totalRoutes = int(arcpy.management.GetCount(routesTable)[0])
+        else:
+            with arcpy.da.SearchCursor(routesTable, ['RouteID']) as routesCursor:
+                deleteRouteIDs = [row[0] for row in routesCursor]
+
+            totalRoutes = len(deleteRouteIDs)
+            messages.addMessage('removing any previous route lines for {} selected route(s)'.format(totalRoutes))
+            deleteQuery = '{} IN (\'{}\')'.format(fldRouteID, '\', \''.join(deleteRouteIDs))
 
         with arcpy.da.Editor(arcpy.env.workspace):
-            if routesDescribe.FIDSet in [None, '']:
-                messages.addMessage('truncating all route lines')
-                deleteQuery = None
-                totalRoutes = int(arcpy.management.GetCount(routesTable)[0])
-            else:
-                with arcpy.da.SearchCursor(routesTable, ['RouteID']) as routesCursor:
-                    deleteRouteIDs = [row[0] for row in routesCursor]
-
-                totalRoutes = len(deleteRouteIDs)
-                messages.addMessage('removing any previous route lines for {} selected route(s)'.format(totalRoutes))
-                deleteQuery = '{} IN (\'{}\')'.format(fldRouteID, '\', \''.join(deleteRouteIDs))
-
             with arcpy.da.UpdateCursor(routeLinesFC, ['OID@'], deleteQuery) as updateCursor:
                 for row in updateCursor:
                     updateCursor.deleteRow()
 
             messages.addMessage('building new routes')
-            fields = [fldRouteName, fldRouteID, fldRouteType, fldURL]
+            fields = [fldRouteName, fldRouteID, fldRouteType, fldUrl]
             count = 0
             errors = []
             arcpy.SetProgressor('step', 'building {} route line(s)'.format(totalRoutes), count, totalRoutes, 1)
@@ -209,15 +222,35 @@ class BuildRouteLines(object):
                     count += 1
                     arcpy.SetProgressorPosition()
 
-            messages.AddMessage('calculating lengths')
             arcpy.SetProgressor('default')
 
             if deleteQuery:
-                routeLinesForGeoUpdate = arcpy.management.MakeFeatureLayer(routeLinesFC, 'routeLinesLyr', deleteQuery)
+                dataForPostProcessing = arcpy.management.MakeFeatureLayer(routeLinesFC, 'routeLinesLyr', deleteQuery)
             else:
-                routeLinesForGeoUpdate = routeLinesFC
+                dataForPostProcessing = routeLinesFC
 
-            arcpy.management.AddGeometryAttributes(routeLinesForGeoUpdate, 'LENGTH', Length_Unit='MILES_US')
+            messages.AddMessage('calculating lengths')
+            arcpy.management.AddGeometryAttributes(dataForPostProcessing, fldLENGTH, Length_Unit='MILES_US')
+
+            if arcpy.Exists(interpolated):
+                messages.AddMessage('cleaning up old interpolated output')
+                arcpy.management.Delete(interpolated)
+
+            messages.AddMessage('interpolating shapes')
+            arcpy.ddd.InterpolateShape(dem, dataForPostProcessing, interpolated, method='BILINEAR')
+            interpolated_lookup = {}
+            with arcpy.da.SearchCursor(interpolated, [fldRouteID, 'Shape@']) as cursor:
+                for routeID, shape in cursor:
+                    interpolated_lookup[routeID] = shape
+
+            messages.AddMessage('updating elevation gains and profiles')
+            with arcpy.da.UpdateCursor(dataForPostProcessing, [fldRouteID, fldElevationGain, fldElevationProfile]) as cursor:
+                for routeID, gain, profile in cursor:
+                    interp_line = interpolated_lookup[routeID]
+                    gain = calculate_elevation_gain(interp_line, messages)
+                    profile = generate_elevation_profile(interp_line, messages)
+
+                    cursor.updateRow((routeID, gain, profile))
 
         messages.addMessage('{} routes processed.'.format(count))
 
@@ -225,3 +258,42 @@ class BuildRouteLines(object):
             messages.addErrorMessage('***ERRORS***')
             for errorMessage in errors:
                 messages.addErrorMessage(errorMessage)
+
+
+def calculate_elevation_gain(line, messages):
+    if line.partCount > 1:
+        messages.addErrorMessage('MULTI-PART LINE Detected!!')
+
+    gain = 0
+    previous_elevation = None
+    for point in line.getPart(0):
+        if previous_elevation is not None and previous_elevation < point.Z:
+            gain += point.Z - previous_elevation
+
+        previous_elevation = point.Z
+
+    return round(gain * meters_to_feet)
+
+
+def generate_elevation_profile(line, messages):
+    elevations = [point.Z * meters_to_feet for point in line.getPart(0)]
+
+    #: generalize elevations if there are more than the max num
+    num_points = len(elevations)
+    if num_points > profile_points_max_num:
+        factor = round(num_points/profile_points_max_num)
+        generalized_elevations = []
+        for index in range(0, num_points - 1, factor):
+            generalized_elevations.append(elevations[index])
+
+        elevations = generalized_elevations
+
+    #: convert elevations to percentages (of max - min) to save on space
+    max_elevation = max(elevations)
+    min_elevation = min(elevations)
+
+    percent_elevations = []
+    for elev in elevations:
+        percent_elevations.append(str(round(((elev - min_elevation) / (max_elevation - min_elevation)) * 100)))
+
+    return ','.join([str(round(min_elevation)), str(round(max_elevation))] + percent_elevations)
