@@ -7,9 +7,9 @@ from os.path import dirname, join
 
 import arcpy
 
-routeLinesFC = 'UtahTrails.TRAILSADMIN.RouteLines'
-routeToSegmentsTable = 'UtahTrails.TRAILSADMIN.RouteToTrailSegments'
-segmentsFC = 'UtahTrails.TRAILSADMIN.TrailSegments'
+routeLinesFC = 'UtahTrails.TRAILSADMIN.RouteLines_evw'
+routeToSegmentsTable = 'UtahTrails.TRAILSADMIN.RouteToTrailSegments_evw'
+segmentsFC = 'UtahTrails.TRAILSADMIN.TrailSegments_evw'
 
 #: fields
 fldRouteName = 'RouteName'
@@ -79,6 +79,7 @@ class FindRouteLineIssues(object):
         arcpy.management.SelectLayerByAttribute(routeLinesLayer, 'CLEAR_SELECTION')
         arcpy.management.SelectLayerByAttribute(segmentsLayer, 'CLEAR_SELECTION')
 
+        #: Find RouteLines that are not overlapped by TrailSegments
         if arcpy.Exists(nonoverlapping):
             messages.addMessage('removing old output')
             arcpy.management.Delete(nonoverlapping)
@@ -87,10 +88,41 @@ class FindRouteLineIssues(object):
         arcpy.analysis.SymDiff(routeLinesLayer, segmentsLayer, nonoverlapping)
 
         messages.addMessage('gathering routeIDs from output')
-        ids = []
+        ids = set()
         with arcpy.da.SearchCursor(nonoverlapping, 'RouteID', 'RouteID IS NOT NULL') as cursor:
             for routeID, in cursor:
-                ids.append(routeID)
+                ids.add(routeID)
+
+        #: Find RouteLines that do not cover all selected segments for a particular route
+        with arcpy.da.SearchCursor(routeLinesLayer, [fldRouteID]) as cursor:
+            all_ids = [routeID for routeID, in cursor]
+
+        arcpy.SetProgressor('step', 'looking for route lines that do not cover all route segments',
+                            min_range=0,
+                            max_range=len(all_ids),
+                            step_value=1)
+
+        for routeID in all_ids:
+            lines_query = '{} = \'{}\''.format(fldRouteID, routeID)
+            segments_query = '{0} IN (SELECT {0} FROM {1} WHERE {2})'.format(fldUSNG_SEG, routeToSegmentsTable, lines_query)
+            segments_union = None
+            with arcpy.da.SearchCursor(routeLinesLayer, [fldRouteID, shapeToken], lines_query) as line_cursor, \
+                    arcpy.da.SearchCursor(segmentsLayer, [shapeToken], segments_query) as segment_cursor:
+                for seg_shape, in segment_cursor:
+                    if segments_union is None:
+                        segments_union = seg_shape
+                    else:
+                        segments_union = segments_union.union(seg_shape)
+
+                routeID, route_shape = line_cursor.next()
+
+                if not segments_union.within(route_shape):
+                    ids.add(routeID)
+
+            arcpy.SetProgressorPosition()
+
+        arcpy.SetProgressor('default')
+        arcpy.management.SelectLayerByAttribute(segmentsLayer, 'CLEAR_SELECTION')
 
         if len(ids) > 0:
             messages.addMessage('selecting route lines')
@@ -122,21 +154,6 @@ class BuildRouteLines(object):
 
         return [routes_table_param, dem_param]
 
-    def isLicensed(self):
-        """Set whether tool is licensed to execute."""
-        return True
-
-    def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
-        return
-
-    def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter.  This method is called after internal validation."""
-        return
-
     def execute(self, parameters, messages):
         routesTable = parameters[0].valueAsText
         dem = parameters[1].valueAsText
@@ -158,7 +175,7 @@ class BuildRouteLines(object):
             deleteQuery = '{} IN (\'{}\')'.format(fldRouteID, '\', \''.join(deleteRouteIDs))
 
         with arcpy.da.Editor(arcpy.env.workspace):
-            with arcpy.da.UpdateCursor(routeLinesFC, ['OID@'], deleteQuery) as updateCursor:
+            with arcpy.da.UpdateCursor(routeLinesFC, '*', deleteQuery) as updateCursor:
                 for row in updateCursor:
                     updateCursor.deleteRow()
 
