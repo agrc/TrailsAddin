@@ -45,6 +45,7 @@ namespace TrailsAddin
 
         // dataset names
         internal string RouteToTrailheads = "RouteToTrailheads";
+        internal string RouteToTrailSegments = "RouteToTrailSegments";
         internal string TrailSegments = "TrailSegments";
         internal string Trailheads = "Trailheads";
         internal string Routes = "Routes";
@@ -68,7 +69,7 @@ namespace TrailsAddin
             TempSegmentsLayer = GetLayer("Temporary Segments");
             USNGLayer = GetLayer("SGID10.INDICES.NationalGrid");
             RoutesStandaloneTable = GetStandAloneTable(Routes);
-            RouteToTrailSegmentsTable = GetStandAloneTable("RouteToTrailSegments");
+            RouteToTrailSegmentsTable = GetStandAloneTable(RouteToTrailSegments);
             RouteToTrailheadsTable = GetStandAloneTable(RouteToTrailheads);
 
             MapSelectionChangedEvent.Subscribe((MapSelectionChangedEventArgs args) =>
@@ -559,18 +560,9 @@ namespace TrailsAddin
                     RouteToTrailSegmentsTable.Select(new QueryFilter() { WhereClause = routeIDQuery });
                     RouteToTrailheadsTable.Select(new QueryFilter() { WhereClause = routeIDQuery });
 
-                    var segmentIDs = new List<string>();
-                    using (var segmentsRelationshipCursor = RouteToTrailSegmentsTable.GetSelection().Search())
-                    {
-                        while (segmentsRelationshipCursor.MoveNext())
-                        {
-                            segmentIDs.Add((string)segmentsRelationshipCursor.Current[USNG_SEG]);
-                        }
-                    }
+                    SegmentsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_SEG} IN (SELECT {USNG_SEG} FROM UtahTrails.TRAILSADMIN.{RouteToTrailSegments}_evw WHERE {routeIDQuery})" });
 
-                    SegmentsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_SEG} IN ('{String.Join("', '", segmentIDs.Distinct())}')" });
-
-                    HeadsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_TH} IN (SELECT {USNG_TH} FROM UtahTrails.TRAILSADMIN.{RouteToTrailheads} WHERE {routeIDQuery})" });
+                    HeadsLayer.Select(new QueryFilter() { WhereClause = $"{USNG_TH} IN (SELECT {USNG_TH} FROM UtahTrails.TRAILSADMIN.{RouteToTrailheads}_evw WHERE {routeIDQuery})" });
 
                     MapView.Active.ZoomToAsync(new [] { SegmentsLayer, HeadsLayer }, true);
                 }
