@@ -147,7 +147,7 @@ namespace TrailsAddin
         internal FeatureLayer GetLayer(string name)
         {
             try
-            { 
+            {
                 return MapView.Active.Map.GetLayersAsFlattenedList().First(l => l.Name == name) as FeatureLayer;
             } catch
             {
@@ -301,7 +301,7 @@ namespace TrailsAddin
                     {
                         Notification notification = new Notification();
                         notification.Title = FrameworkApplication.Title;
-                        notification.Message = string.Format("Route: \"{0}\" added successfully!", routeName);
+                        notification.Message = $"Route: \"{routeName}\" added successfully!";
                         FrameworkApplication.AddNotification(notification);
 
                         SegmentsLayer.ClearSelection();
@@ -541,6 +541,62 @@ namespace TrailsAddin
                     MessageBox.Show("Error cancelling new route!");
                 }
             });
+        }
+
+        internal void OnDeleteRouteButtonClick()
+        {
+            QueuedTask.Run(() =>
+            {
+                using (var cursor = RoutesStandaloneTable.GetSelection().Search(null))
+                {
+                    var operation = new EditOperation();
+
+                    cursor.MoveNext();
+                    var routeRow = cursor.Current;
+                    string routeID = (string)routeRow[RouteID];
+                    string routeName = (string)routeRow[RouteName];
+
+                    operation.Name = $"Delete route: {routeName}";
+                    operation.Delete(RoutesStandaloneTable, routeRow.GetObjectID());
+
+                    var query = new QueryFilter() { WhereClause = $"{RouteID} = '{routeID}'" };
+                    using (var segsCursor = RouteToTrailSegmentsTable.Search(query))
+                    using (var headsCursor = RouteToTrailheadsTable.Search(query))
+                    {
+                        while (segsCursor.MoveNext())
+                        {
+                            operation.Delete(RouteToTrailSegmentsTable, segsCursor.Current.GetObjectID());
+                        }
+                        while (headsCursor.MoveNext())
+                        {
+                            operation.Delete(RouteToTrailheadsTable, headsCursor.Current.GetObjectID());
+                        }
+                    }
+
+                    operation.Execute();
+                    
+                    if (operation.IsSucceeded)
+                    {
+                        Notification notification = new Notification();
+                        notification.Title = FrameworkApplication.Title;
+                        notification.Message = $"Route: \"{routeName}\" deleted successfully!";
+                        FrameworkApplication.AddNotification(notification);
+
+                        RoutesStandaloneTable.ClearSelection();
+                    } else
+                    {
+                        MessageBox.Show(operation.ErrorMessage);
+                    }
+                }
+            });
+        }
+
+        internal bool CanOnDeleteRouteButtonClick
+        {
+            get
+            {
+                return RoutesStandaloneTable.SelectionCount == 1;
+            }
         }
 
         private void ShowRoute()

@@ -78,3 +78,9 @@ Assert that the selected features were assigned IDs.
 ## Review Drop Down
 1. Unselect "Build route on select".
 1. Select an option in the review drop down and verify that the appropriate records in the associated table were selected.
+
+## Delete Route
+1. Select a single route in the routes table.
+1. Click on the "Delete Route" button.
+
+Assert that the row in the Routes table and related records in RoutesToTrailSegments and RoutesToTrailheads tables were deleted.

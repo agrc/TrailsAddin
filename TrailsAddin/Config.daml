@@ -40,6 +40,7 @@
           <button refID="esri_editing_ShowAttributes" />
           <button refID="esri_editing_SaveEditsBtn" />
           <button refID="esri_editing_DiscardEditsBtn" />
+          <button refID="TrailsAddin_DeleteRoute_Button" />
         </group>
         <group id="TrailsAddin_IDsGroup" caption="Tools">
           <button refID="TrailsAddin_AddIDs" />
@@ -58,6 +59,12 @@
         <button id="Cancel_Button" caption="Cancel New Route" className="TrailsAddin_Module:OnCancelButtonClick" smallImage="Images\GenericButtonBlue16.png" largeImage="Images\GenericButtonBlue32.png">
           <tooltip heading="Cancel Route">Cancel current route. Empties Temporary Segments layer.<disabledText /></tooltip>
         </button>
+        <button id="TrailsAddin_DeleteRoute_Button" caption="Delete Route" loadOnClick="false" className="TrailsAddin_Module:OnDeleteRouteButtonClick" smallImage="Images\GenericButtonRed16.png" largeImage="Images\GenericButtonRed32.png">
+          <tooltip heading="Delete Route">
+            Delete currently selected route. Deletes row in Routes tables and related rows in RouteToTrailSegments and RouteToTrailheads tables.
+            <disabledText>A single route must be selected.</disabledText>
+          </tooltip>
+        </button>
         <button id="TrailsAddin_AddIDs" caption="AddIDs" className="AddIDs" loadOnClick="true" smallImage="Images\GenericButtonBlue16.png" largeImage="Images\GenericButtonBlue32.png">
           <tooltip heading="Tooltip Heading">Tooltip text<disabledText /></tooltip>
         </button>
@@ -66,7 +73,7 @@
         </button>
         <editBox id="Parts_EditBox" caption="Parts" className="NumPartsEditBox" dataType="string" sizeString="10" />
         <editBox id="NumRouteTrails_EditBox" caption="Route Character(s)" className="NumRouteCharsEditBox" dataType="string" sizeString="50" />
-        <comboBox id="TrailsAddin_ReviewDropDown" caption="" className="ReviewComboBox" itemWidth="140" extendedCaption="Extended Caption" isEditable="false" isReadOnly="true" resizable="true">
+        <comboBox id="TrailsAddin_ReviewDropDown" caption="Review" className="ReviewComboBox" itemWidth="140" extendedCaption="Extended Caption" isEditable="false" isReadOnly="true" resizable="true">
           <tooltip heading="Tooltip Heading">Choose an option to select rows that may have issues.<disabledText /></tooltip>
         </comboBox>
       </controls>
