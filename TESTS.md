@@ -16,6 +16,18 @@ Assert that the new route was successfully created.
 Assert that the new route was successfully created.
 
 
+## Can undo and re-add segments
+1. Select "Build route on select".
+1. Select multiple segments.
+1. Click on the "undo" button.
+
+Assert that the segments are removed from the part
+
+1. Select one of the previously removed segments.
+
+Assert that the segment is added back to the route.
+
+
 ## Connectivity validation within a single part
 1. Unselect "Build route on select"
 1. Select several unconnected segments.

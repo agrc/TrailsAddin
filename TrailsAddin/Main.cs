@@ -109,6 +109,7 @@ namespace TrailsAddin
                 {
                     EditOperation operation = new EditOperation();
                     operation.Name = "add selected to temp segments";
+                    List<string> newIDs = new List<string>();
                     while (segmentsCursor.MoveNext())
                     {
                         var id = EnsureIDForSegment(segmentsCursor.Current, operation);
@@ -121,8 +122,15 @@ namespace TrailsAddin
 
                         CopyRowValues(segmentsCursor.Current, currentPart, operation);
 
-                        tempSegmentIDs.Add(id);
+                        newIDs.Add(id);
                     }
+
+                    tempSegmentIDs.AddRange(newIDs);
+
+                    operation.SetOnUndone(() =>
+                    {
+                        tempSegmentIDs.RemoveRange(tempSegmentIDs.Count - newIDs.Count, newIDs.Count);
+                    });
 
                     bool success = operation.Execute();
                     if (!success)
