@@ -1,5 +1,11 @@
 # TrailsAddin Changelog
 
+## v1.8.0
+- Cleaner table editing code.
+- Use versioned views for SQL queries.
+- Fix bug preventing undo and re-adding of segments when building on select.
+- Add "Delete Route" button.
+
 ## v1.7.2
 - Add selection of RouteToTrailheads table to route select process
 - Remove unused RouteLines feature layer reference
