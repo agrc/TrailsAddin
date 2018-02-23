@@ -7,9 +7,9 @@ from os.path import dirname, join
 
 import arcpy
 
-routeLinesFC = 'UtahTrails.TRAILSADMIN.RouteLines_evw'
-routeToSegmentsTable = 'UtahTrails.TRAILSADMIN.RouteToTrailSegments_evw'
-segmentsFC = 'UtahTrails.TRAILSADMIN.TrailSegments_evw'
+routeLinesFC = 'UtahTrails.TRAILSADMIN.RouteLines'
+routeToSegmentsTable = 'UtahTrails.TRAILSADMIN.RouteToTrailSegments'
+segmentsFC = 'UtahTrails.TRAILSADMIN.TrailSegments'
 
 #: fields
 fldRouteName = 'RouteName'
@@ -160,7 +160,6 @@ class BuildRouteLines(object):
         routesDescribe = arcpy.Describe(routesTable)
 
         arcpy.env.workspace = dirname(routesDescribe.catalogPath)
-        messages.AddMessage(arcpy.env.workspace)
 
         if routesDescribe.FIDSet in [None, '']:
             messages.addMessage('truncating all route lines')
