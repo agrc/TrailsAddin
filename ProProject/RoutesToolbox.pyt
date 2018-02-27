@@ -20,6 +20,7 @@ fldUrl = 'Url'
 fldUSNG_SEG = 'USNG_SEG'
 fldRoutePart = 'RoutePart'
 fldLENGTH = 'LENGTH'
+fldUSNG_TH = 'USNG_TH'
 
 shapeToken = 'SHAPE@'
 utm = arcpy.SpatialReference(26912)
@@ -52,27 +53,23 @@ class FindRouteLineIssues(object):
         self.canRunInBackground = True
 
     def getParameterInfo(self):
-        route_lines_param = arcpy.Parameter(displayName='RouteLines Layer',
-                                            name='route_lines_layer',
-                                            datatype='GPFeatureLayer',
-                                            parameterType='Required',
-                                            direction='input')
-        segments_param = arcpy.Parameter(displayName='TrailSegments Layer',
-                                         name='segments_layer',
-                                         datatype='GPFeatureLayer',
-                                         parameterType='Required',
-                                         direction='input')
-
-        return [route_lines_param, segments_param]
+        return []
 
     def execute(self, parameters, messages):
-        routeLinesLayer = parameters[0].valueAsText
-        segmentsLayer = parameters[1].valueAsText
+        routeLinesLayer = 'RouteLines'
+        segmentsLayer = 'TrailSegments'
+        trailheadsLayer = 'Trailheads'
+        routeToTrailheadsTable = 'RouteToTrailheads'
         nonoverlapping = join(arcpy.env.scratchGDB, 'nonoverlapping')
 
         messages.addMessage('clearing selection on layers')
         arcpy.management.SelectLayerByAttribute(routeLinesLayer, 'CLEAR_SELECTION')
         arcpy.management.SelectLayerByAttribute(segmentsLayer, 'CLEAR_SELECTION')
+        arcpy.management.SelectLayerByAttribute(trailheadsLayer, 'CLEAR_SELECTION')
+        arcpy.management.SelectLayerByAttribute(routeToTrailheadsTable, 'CLEAR_SELECTION')
+
+        ids = set()
+        warning_messages = []
 
         #: Find RouteLines that are not overlapped by TrailSegments
         if arcpy.Exists(nonoverlapping):
@@ -83,9 +80,9 @@ class FindRouteLineIssues(object):
         arcpy.analysis.SymDiff(routeLinesLayer, segmentsLayer, nonoverlapping)
 
         messages.addMessage('gathering routeIDs from output')
-        ids = set()
-        with arcpy.da.SearchCursor(nonoverlapping, 'RouteID', 'RouteID IS NOT NULL') as cursor:
-            for routeID, in cursor:
+        with arcpy.da.SearchCursor(nonoverlapping, [fldRouteID, fldRouteName], 'RouteID IS NOT NULL') as cursor:
+            for routeID, routeName in cursor:
+                warning_messages.append(routeName + ': route not overlapped by segments')
                 ids.add(routeID)
 
         #: Find RouteLines that do not cover all selected segments for a particular route
@@ -101,7 +98,7 @@ class FindRouteLineIssues(object):
             lines_query = '{} = \'{}\''.format(fldRouteID, routeID)
             segments_query = '{0} IN (SELECT {0} FROM {1} WHERE {2})'.format(fldUSNG_SEG, routeToSegmentsTable, lines_query)
             segments_union = None
-            with arcpy.da.SearchCursor(routeLinesLayer, [fldRouteID, shapeToken], lines_query) as line_cursor, \
+            with arcpy.da.SearchCursor(routeLinesLayer, [fldRouteID, shapeToken, fldRouteName], lines_query) as line_cursor, \
                     arcpy.da.SearchCursor(segmentsLayer, [shapeToken], segments_query) as segment_cursor:
                 for seg_shape, in segment_cursor:
                     if segments_union is None:
@@ -109,9 +106,10 @@ class FindRouteLineIssues(object):
                     else:
                         segments_union = segments_union.union(seg_shape)
 
-                routeID, route_shape = line_cursor.next()
+                routeID, route_shape, routeName = line_cursor.next()
 
                 if not segments_union.within(route_shape):
+                    warning_messages.append(routeName + ': route does not cover all related segments')
                     ids.add(routeID)
 
             arcpy.SetProgressorPosition()
@@ -119,10 +117,43 @@ class FindRouteLineIssues(object):
         arcpy.SetProgressor('default')
         arcpy.management.SelectLayerByAttribute(segmentsLayer, 'CLEAR_SELECTION')
 
+        #: Found OutAndBack RouteLines that may be oriented in the wrong direction
+        head_ids_lookup = {}
+        with arcpy.da.SearchCursor(trailheadsLayer, [fldUSNG_TH, shapeToken]) as cursor:
+            for usng_id, point in cursor:
+                head_ids_lookup[usng_id] = point
+
+        head_route_lookup = {}
+        with arcpy.da.SearchCursor(routeToTrailheadsTable, [fldRouteID, fldUSNG_TH]) as cursor:
+            for routeID, usng_id in cursor:
+                head_route_lookup.setdefault(routeID, []).append(head_ids_lookup[usng_id])
+
+        with arcpy.da.SearchCursor(routeLinesLayer, [fldRouteID, shapeToken, fldRouteName], '{} = \'{}\''.format(fldRouteType, outAndBack)) as cursor:
+            for routeID, line, routeName in cursor:
+                #: skip routes with more than one trail head
+                try:
+                    if len(head_route_lookup[routeID]) > 1:
+                        continue
+                except KeyError:
+                    #: skip routes that do not have any associated trailheads
+                    continue
+
+                head = head_route_lookup[routeID][0]
+                distance_from_start = head.distanceTo(line.firstPoint)
+                distance_from_end = head.distanceTo(line.lastPoint)
+
+                if distance_from_start > distance_from_end:
+                    warning_messages.append(routeName + ': route may be oriented in the wrong direction')
+                    ids.add(routeID)
+
         if len(ids) > 0:
             messages.addMessage('selecting route lines')
             query = 'RouteID IN (\'{}\')'.format('\', \''.join(ids))
             arcpy.management.SelectLayerByAttribute(routeLinesLayer, 'NEW_SELECTION', query)
+
+            warning_messages.sort()
+            for warning in warning_messages:
+                messages.addWarningMessage(warning)
         else:
             messages.addMessage('No problems found!')
 
