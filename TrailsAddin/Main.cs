@@ -14,6 +14,9 @@ using static ArcGIS.Desktop.Editing.EditOperation;
 using ArcGIS.Desktop.Mapping.Events;
 using ArcGIS.Core.CIM;
 using System.Threading.Tasks;
+using ProEvergreen;
+using Reactive.Bindings;
+using TrailsAddin.Models;
 
 namespace TrailsAddin
 {
@@ -50,6 +53,23 @@ namespace TrailsAddin
         internal string TrailSegments = "TrailSegments";
         internal string Trailheads = "Trailheads";
         internal string Routes = "Routes";
+
+        // Evergreen
+        private readonly IEnumerable<string> _addinKeys = new[] { "TrailsAddin.Evergreen.BetaChannel" };
+
+        public ReactiveProperty<bool> IsCurrent { get; } = new ReactiveProperty<bool>(true);
+
+        public Dictionary<string, string> Settings { get; set; } = new Dictionary<string, string>();
+
+        public ReactiveProperty<Evergreen> Evergreen { get; } = new ReactiveProperty<Evergreen>
+        {
+            Value = new Evergreen("agrc", "TrailsAddin")
+        };
+
+        public EvergreenSettings EvergreenSettings { get; set; } = new EvergreenSettings
+        {
+            BetaChannel = true
+        };
 
         /// <summary>
         /// Retrieve the singleton instance to this module here
@@ -668,6 +688,94 @@ namespace TrailsAddin
         internal void ChangeRouteName(string text)
         {
             OnRouteNameChanged(this, new OnRouteNameChangedArgs(text));
+        }
+
+        public async Task CheckForLastest()
+        {
+            var useBetaChannel = true;
+            if (Current.Settings.TryGetValue("TrailsAddin.Evergreen.BetaChannel", out var value))
+            {
+                bool.TryParse(value, out useBetaChannel);
+            }
+
+            EvergreenSettings.LatestRelease = await Evergreen.Value.GetLatestReleaseFromGithub(useBetaChannel);
+            EvergreenSettings.CurrentVersion = Evergreen.Value.GetCurrentAddInVersion();
+
+            try
+            {
+                IsCurrent.Value = Evergreen.Value.IsCurrent(EvergreenSettings.CurrentVersion.AddInVersion,
+                                                            EvergreenSettings.LatestRelease);
+            }
+            catch (ArgumentNullException)
+            {
+                if (EvergreenSettings.CurrentVersion == null)
+                {
+                    // pro addin version couldnt be found
+                    throw;
+                }
+
+                // github doesn't have a version. most likely only prereleases and no stable
+                IsCurrent.Value = true;
+            }
+        }
+
+        protected override async Task OnReadSettingsAsync(ModuleSettingsReader settings)
+        {
+            Settings.Clear();
+
+            if (settings == null)
+            {
+                try
+                {
+                    await CheckForLastest();
+                }
+                catch
+                {
+                    // ignored
+                }
+
+                await base.OnReadSettingsAsync(null);
+
+                return;
+            }
+
+            foreach (var key in _addinKeys)
+            {
+                var value = settings.Get(key);
+
+                if (value != null)
+                {
+                    Settings[key] = value.ToString();
+                }
+            }
+
+            EvergreenSettings.BetaChannel = Convert.ToBoolean(Settings["TrailsAddin.Evergreen.BetaChannel"]);
+
+            try
+            {
+                await CheckForLastest();
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+
+        protected override async Task OnWriteSettingsAsync(ModuleSettingsWriter settings)
+        {
+            foreach (var key in Settings.Keys)
+            {
+                settings.Add(key, Settings[key]);
+            }
+
+            try
+            {
+                await CheckForLastest();
+            }
+            catch
+            {
+                // ignored
+            }
         }
     }
 

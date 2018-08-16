@@ -79,4 +79,11 @@
       </controls>
     </insertModule>
   </modules>
+  <propertySheets>
+    <updateSheet refID="esri_core_optionsPropertySheet">
+      <insertPage id="TrailsAddin_Views_EvergreenSettings" caption="Trails Addin Settings" className="TrailsAddin.Views.EvergreenSettingsViewModel" group="Project">
+        <content className="TrailsAddin.Views.EvergreenSettingsView" />
+      </insertPage>
+    </updateSheet>
+  </propertySheets>
 </ArcGIS>

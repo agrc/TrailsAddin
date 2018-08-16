@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrailsAddin", "TrailsAddin\TrailsAddin.csproj", "{302C3D3B-3132-4D2C-923D-4A325E801D8C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrailsAddin", "TrailsAddin.csproj", "{302C3D3B-3132-4D2C-923D-4A325E801D8C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +18,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2D52B485-967C-4ECF-B20E-FA181E166780}
 	EndGlobalSection
 EndGlobal
