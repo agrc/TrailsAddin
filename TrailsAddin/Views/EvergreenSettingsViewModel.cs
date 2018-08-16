@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
-using ArcGIS.Desktop.Framework;
+using ArcGIS.Desktop.Core;
 using ArcGIS.Desktop.Framework.Contracts;
 using Reactive.Bindings;
 
@@ -31,6 +32,9 @@ namespace TrailsAddin.Views
         public EvergreenSettingsViewModel()
         {
             OpenRepository.Subscribe(() => Process.Start("https://github.com/agrc/TrailsAddin"));
+            CurrentVersion = Main
+                             .Current.Evergreen.Select(x => Main.Current.EvergreenSettings.CurrentVersion?.AddInVersion ?? "Unknown")
+                             .ToReactiveProperty();
         }
 
         /// <summary>
@@ -47,9 +51,26 @@ namespace TrailsAddin.Views
         /// </summary>
         /// <returns>A task that represents the work queued to execute in the ThreadPool.</returns>
         /// <remarks>This function is only called if the page has set its IsModified flag to true.</remarks>
-        protected override Task CommitAsync()
+        protected override async Task CommitAsync()
         {
-            return Task.FromResult(0);
+            var settings = Main.Current.Settings;
+
+            settings["UICAddin.Evergreen.BetaChannel"] = BetaChannel.ToString();
+            if (BetaChannel != Main.Current.EvergreenSettings.BetaChannel)
+            {
+                Project.Current.SetDirty();
+            }
+
+            Main.Current.EvergreenSettings.BetaChannel = BetaChannel;
+
+            try
+            {
+                await Main.Current.CheckForLastest();
+            }
+            catch
+            {
+                // ignored
+            }
         }
 
         /// <summary>
@@ -58,7 +79,16 @@ namespace TrailsAddin.Views
         /// <returns>A task that represents the work queued to execute in the ThreadPool.</returns>
         protected override Task InitializeAsync()
         {
-            return Task.FromResult(true);
+            var useBetaChannel = false;
+            var settings = Main.Current.Settings;
+            if (settings.TryGetValue("TrailsAddin.Evergreen.BetaChannel", out var value))
+            {
+                bool.TryParse(value, out useBetaChannel);
+            }
+
+            _betaChannel = useBetaChannel; 
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
