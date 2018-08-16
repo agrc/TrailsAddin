@@ -9,12 +9,12 @@ namespace TrailsAddin
     {
         protected override void OnClick()
         {
-            QueuedTask.Run(() =>
+            QueuedTask.Run(async () =>
             {
                 var operation = new EditOperation();
                 operation.Name = "Add IDs to selected segments and trailheads";
 
-                Main.Current.EnsureIDsForSelected(operation);
+                await Main.Current.EnsureIDsForSelectedAsync(operation);
 
                 var success = operation.Execute();
                 if (!success)
