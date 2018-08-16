@@ -15,8 +15,49 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
-    <Grid>
-        <!-- Replace text block below with your UI components. -->
-        <TextBlock Text="{Binding DataUIContent}" Style="{DynamicResource Esri_TextBlockRegular}" />
-    </Grid>
+    <StackPanel>
+        <TextBlock Text="Set project options for the Trails Add-in"
+               Style="{DynamicResource Esri_TextBlockH3}"
+               Margin="10,10,0,5" />
+        <Grid Margin="14,8,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="25" />
+                <RowDefinition Height="25" />
+                <RowDefinition Height="25" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="2*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Row="0" Grid.Column="0"
+                   Text="Installed Add-in Version"
+                   VerticalAlignment="Center"
+                   Style="{DynamicResource Esri_TextBlockRegular}"
+                   Margin="0,0,10,0" />
+            <TextBlock Grid.Row="0" Grid.Column="1"
+                   Text="{Binding CurrentVersion.Value}"
+                   Style="{DynamicResource Esri_TextBlockRegular}"
+                   VerticalAlignment="Center" />
+            <TextBlock Grid.Row="1" Grid.Column="0"
+                   Text="GitHub Repository"
+                   VerticalAlignment="Center"
+                   Style="{DynamicResource Esri_TextBlockRegular}"
+                   Margin="0,0,10,0" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text=""
+                   Style="{DynamicResource Esri_TextBlockRegular}"
+                   Foreground="{DynamicResource Esri_TextCaptionActiveBrush}"
+                   VerticalAlignment="Center">
+          <Hyperlink NavigateUri="https://github.com/agrc/TrailsAddin" Command="{Binding OpenRepository}">
+            https://github.com/agrc/TrailsAddin
+          </Hyperlink>
+            </TextBlock>
+            <CheckBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                  Content="Include Beta Releases"
+                  IsChecked="{Binding BetaChannel}"
+                  VerticalAlignment="Center"
+                  HorizontalAlignment="Left"
+                  Width="305"
+                  Style="{DynamicResource Esri_CheckboxToggleSwitch}" />
+        </Grid>
+    </StackPanel>
 </UserControl>
