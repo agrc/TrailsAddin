@@ -1,5 +1,8 @@
 # TrailsAddin Changelog
 
+## v1.8.1
+- Implement Pro Evergreen.
+
 ## v1.8.0
 - Cleaner table editing code.
 - Use versioned views for SQL queries.
