@@ -121,6 +121,7 @@
   <ItemGroup>
     <Compile Include="AddIDs.cs" />
     <Compile Include="AddPart.cs" />
+    <Compile Include="UpdateButton.cs" />
     <Compile Include="Models\EvergreenSettings.cs" />
     <Compile Include="ReviewComboBox.cs" />
     <Compile Include="NumRouteCharsEditBox.cs" />

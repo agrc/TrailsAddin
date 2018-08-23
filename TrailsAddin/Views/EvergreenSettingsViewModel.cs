@@ -65,7 +65,7 @@ namespace TrailsAddin.Views
 
             try
             {
-                await Main.Current.CheckForLastest();
+                await Main.Current.CheckForLatestVersion();
             }
             catch
             {

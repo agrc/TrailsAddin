@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using ProEvergreen;
 using Reactive.Bindings;
 using TrailsAddin.Models;
+using System.Diagnostics;
 
 namespace TrailsAddin
 {
@@ -56,8 +57,6 @@ namespace TrailsAddin
 
         // Evergreen
         private readonly IEnumerable<string> _addinKeys = new[] { "TrailsAddin.Evergreen.BetaChannel" };
-
-        public ReactiveProperty<bool> IsCurrent { get; } = new ReactiveProperty<bool>(true);
 
         public Dictionary<string, string> Settings { get; set; } = new Dictionary<string, string>();
 
@@ -120,6 +119,13 @@ namespace TrailsAddin
                     SelectedRoute = null;
                 }
             });
+        }
+
+        protected override bool Initialize()
+        {
+            CheckForLatestVersion();
+
+            return true;
         }
 
         private async void AddSelectedToTemp()
@@ -690,7 +696,7 @@ namespace TrailsAddin
             OnRouteNameChanged(this, new OnRouteNameChangedArgs(text));
         }
 
-        public async Task CheckForLastest()
+        internal async Task CheckForLatestVersion()
         {
             var useBetaChannel = true;
             if (Current.Settings.TryGetValue("TrailsAddin.Evergreen.BetaChannel", out var value))
@@ -701,9 +707,11 @@ namespace TrailsAddin
             EvergreenSettings.LatestRelease = await Evergreen.Value.GetLatestReleaseFromGithub(useBetaChannel);
             EvergreenSettings.CurrentVersion = Evergreen.Value.GetCurrentAddInVersion();
 
+            bool isCurrent;
+
             try
             {
-                IsCurrent.Value = Evergreen.Value.IsCurrent(EvergreenSettings.CurrentVersion.AddInVersion,
+                isCurrent = Evergreen.Value.IsCurrent(EvergreenSettings.CurrentVersion.AddInVersion,
                                                             EvergreenSettings.LatestRelease);
             }
             catch (ArgumentNullException)
@@ -715,8 +723,37 @@ namespace TrailsAddin
                 }
 
                 // github doesn't have a version. most likely only prereleases and no stable
-                IsCurrent.Value = true;
+                isCurrent = true;
             }
+ 
+            var conditionName = "trails_addin_has_update_state";
+            if (isCurrent)
+            {
+                FrameworkApplication.State.Deactivate(conditionName);
+            }
+            else
+            {
+                FrameworkApplication.State.Activate(conditionName);
+            }
+        }
+
+        internal async void UpdateToLatest()
+        {
+            if (EvergreenSettings.LatestRelease == null)
+            {
+                return;
+            }
+
+            await Evergreen.Value.Update(EvergreenSettings.LatestRelease);
+
+            var notification = new Notification
+            {
+                Message = "Restart to complete the update.",
+                ImageUrl = "",
+                Title = "Evergreen: Upate Complete"
+            };
+
+            FrameworkApplication.AddNotification(notification);
         }
 
         protected override async Task OnReadSettingsAsync(ModuleSettingsReader settings)
@@ -727,7 +764,7 @@ namespace TrailsAddin
             {
                 try
                 {
-                    await CheckForLastest();
+                    await CheckForLatestVersion();
                 }
                 catch
                 {
@@ -753,7 +790,7 @@ namespace TrailsAddin
 
             try
             {
-                await CheckForLastest();
+                await CheckForLatestVersion();
             }
             catch
             {
@@ -770,7 +807,7 @@ namespace TrailsAddin
 
             try
             {
-                await CheckForLastest();
+                await CheckForLatestVersion();
             }
             catch
             {
