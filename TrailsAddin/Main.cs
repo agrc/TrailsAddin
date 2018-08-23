@@ -698,7 +698,7 @@ namespace TrailsAddin
 
         internal async Task CheckForLatestVersion()
         {
-            var useBetaChannel = true;
+            var useBetaChannel = false;
             if (Current.Settings.TryGetValue("TrailsAddin.Evergreen.BetaChannel", out var value))
             {
                 bool.TryParse(value, out useBetaChannel);

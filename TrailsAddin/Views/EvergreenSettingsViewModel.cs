@@ -55,7 +55,7 @@ namespace TrailsAddin.Views
         {
             var settings = Main.Current.Settings;
 
-            settings["UICAddin.Evergreen.BetaChannel"] = BetaChannel.ToString();
+            settings["TrailsAddin.Evergreen.BetaChannel"] = BetaChannel.ToString();
             if (BetaChannel != Main.Current.EvergreenSettings.BetaChannel)
             {
                 Project.Current.SetDirty();

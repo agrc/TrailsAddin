@@ -52,7 +52,7 @@
           </Hyperlink>
             </TextBlock>
             <CheckBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
-                  Content="Include Beta Releases"
+                  Content="Include Beta Releases Only"
                   IsChecked="{Binding BetaChannel}"
                   VerticalAlignment="Center"
                   HorizontalAlignment="Left"
